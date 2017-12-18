@@ -1,0 +1,60 @@
+<template>
+  <div>
+    <el-tabs v-model="activeName">
+      <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-form :inline="true" :model="filters">
+          <el-form-item>
+            <el-input v-model="filters.name" placeholder="按关联内容查询"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" v-on:click="">查询</el-button>
+          </el-form-item>
+          <el-button class="pull-right" type="primary" icon="upload2" id="download">生成列表</el-button>
+        </el-form>
+      </el-col>
+      <el-tab-pane label="已上线" name="first">
+        <online-table></online-table>
+      </el-tab-pane>
+      <el-tab-pane label="已下线" name="second">
+        <outline-table></outline-table>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+  import onlineTable from '../components/bannerManage/onlineTable.vue'
+  import outlineTable from '../components/bannerManage/outlineTable.vue'
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        filters: {
+          name: ''
+        }
+      }
+    },
+    components: { onlineTable, outlineTable },
+    mounted () {
+      let vm = this
+      let val = {
+        tableParams: vm.filters.name,
+        callback: function (res) {
+          console.log(res)
+        }
+      }
+      this.$store.dispatch('getOnlineTable', c)
+      this.$store.dispatch('getOutlineTable', val)
+    },
+    methods: {
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+</style>

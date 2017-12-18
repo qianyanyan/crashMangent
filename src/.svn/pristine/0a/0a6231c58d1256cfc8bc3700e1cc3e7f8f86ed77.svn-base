@@ -1,0 +1,74 @@
+<template>
+  <div style="margin: 15px 0;">
+    <el-tabs v-model="activeName">
+      <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-form :inline="true" :model="filters">
+        <el-form-item>
+            <el-button type="primary" @click="handleAdd" >新增</el-button>
+        </el-form-item>
+         <el-form-item>
+        <el-date-picker v-model="startDate" type="date" format="yyyy-MM-dd" placeholder="选择开始日期" :picker-options="startPickerOptions" @change="selectedOnline(startDate)">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-date-picker v-model="endDate" type="date" format="yyyy-MM-dd" placeholder="选择结束日期" :picker-options="endPickerOptions" @change="selectedEnd(endDate)">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" v-on:click="" >查询</el-button>
+      </el-form-item>
+      <el-form-item>
+            <el-input v-model="filters.name" placeholder="请输入排序位置"></el-input>
+          </el-form-item>
+      <el-form-item>
+        <el-input v-model="search" placeholder="请输入关键字"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" v-on:click="" >保存</el-button>
+      </el-form-item>
+      <el-button class="filter-item" type="primary" icon="document" >导出数据</el-button>
+        </el-form>
+      </el-col>
+      <el-tab-pane label="已上线" name="first">
+        <online-table></online-table>
+      </el-tab-pane>
+       <el-tab-pane label="待上线" name="second">
+        <future-table></future-table>
+      </el-tab-pane>
+      <el-tab-pane label="已下线" name="third">
+        <outline-table></outline-table>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+  import onlineTable from '../components/marketList/onlineTable.vue'
+  import outlineTable from '../components/marketList/outlineTable.vue'
+  import futureTable from '../components/marketList/futureTable.vue'
+ 
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        filters: {
+          name: ''
+        }
+      }
+    },
+    components: { onlineTable, outlineTable ,futureTable},
+    mounted () {
+      this.getOnlineTable()
+      this.getOutlineTable()
+    },
+    methods: {
+     
+     
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  
+</style>

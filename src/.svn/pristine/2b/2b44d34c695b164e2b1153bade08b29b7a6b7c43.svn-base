@@ -1,0 +1,293 @@
+import { requestLogin, toIndex, searMerchantAd } from '../api/api'
+
+export default {
+  // 登陆后，获取用户信息
+  getUser (context, value) {
+    // ajax请求
+    requestLogin(value.loginParams).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeUserId', val)
+    })
+  },
+  // 获取首页信息
+  getIndexInfo (context, value) {
+    toIndex(value.userId).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeIndexInfo', val)
+    })
+  },
+  // 获取已在线表格
+  getOnlineTable (context, value) {
+    let response = {
+      data: {
+        bannerPositionList: [
+          {
+            id: 1,
+            orderNo: 1,
+            bannerPositionName: '1号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称1',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 2,
+            orderNo: 2,
+            bannerPositionName: '2号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称2',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 3,
+            orderNo: 3,
+            bannerPositionName: '3号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称3',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 4,
+            orderNo: 4,
+            bannerPositionName: '4号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称5',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 5,
+            orderNo: 5,
+            bannerPositionName: '5号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称1',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          }
+        ]
+      },
+      total: 5,
+      message: 'OK',
+      code: 200
+    }
+    let val = {
+      data: response,
+      callback: value.callback
+    }
+    context.commit('getOnlineTable', val)
+  },
+  getOutlineTable (context, value) {
+    let response = {
+      'data': {
+        'bannerPositionList': [
+          {
+            id: 1,
+            adName: '广告名称1',
+            bannerPositionName: '1号banner位',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineRealEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 2,
+            adName: '广告名称2',
+            bannerPositionName: '1号banner位',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineRealEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 3,
+            adName: '广告名称3',
+            bannerPositionName: '1号banner位',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineRealEnd: '2017-10-30 05:41:08'
+          }
+        ]
+      },
+      total: 3,
+      message: 'OK',
+      code: 200
+    }
+    let val = {
+      data: response,
+      callback: value.callback
+    }
+    context.commit('getOutlineTable', val)
+  },
+  getAdvertisTable (context, value) {
+    searMerchantAd(value).then(data => {
+      let advertisData = {
+        currentPage: 1,
+        total: data.data.total,
+        list: data.data.data,
+        pageSize: (data.data.pageSize ? data.data.pageSize : 10)
+      }
+      let val = {
+        data: advertisData,
+        callback: value.callback
+      }
+      context.commit('getAdvertisTable', val)
+    })
+  },
+  // 获取已在线超市列表
+  getOnlineMarketList (context, value) {
+    let data = {
+      total: 5,
+      list: [
+        {
+          sort: '第1位',
+          name: '货上线',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 11111
+        },
+        {
+          sort: '第2位',
+          name: '屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 22222
+        },
+        {
+          sort: '第3位',
+          name: '小屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 33333
+        },
+        {
+          sort: '第4位',
+          name: '大屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 44444
+        },
+        {
+          sort: '第5位',
+          name: '超大屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 55555
+        }
+      ]
+    }
+    let val = {
+      data: data,
+      callback: value.callback
+    }
+    context.commit('getOnlineMarketList', val)
+  },
+  // 获取待上线超市列表
+  getFutureMarketList (context, value) {
+    let data = {
+      total: 5,
+      list: [
+        {
+          sort: '第1位',
+          name: '货上线',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 11111
+        },
+        {
+          sort: '第2位',
+          name: '屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 22222
+        },
+        {
+          sort: '第3位',
+          name: '小屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 33333
+        },
+        {
+          sort: '第4位',
+          name: '大屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 44444
+        },
+        {
+          sort: '第5位',
+          name: '超大屁股贷款',
+          label: '审核快;放款快;运营商授权',
+          targetURL: 'https://www.baidu.com',
+          conditions: '18~40周岁|手机使用满6个月',
+          systemLabel: 'hot',
+          onlineRealStart: '2017-10-25 05:41:08',
+          picURL: 'http://img.qq745.com/uploads/allimg/170420/18-1F420093A2J6.png',
+          statistical: 55555
+        }
+      ]
+    }
+    let val = {
+      data: data,
+      callback: value.callback
+    }
+    context.commit('getFutureMarketList', val)
+  }
+}

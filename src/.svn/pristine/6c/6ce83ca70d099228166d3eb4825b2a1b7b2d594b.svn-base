@@ -1,0 +1,37 @@
+export default {
+  judgePermissionName (value, list) {
+    if (list.length == 0) {
+      list = localStorage.getItem('permissionName')
+    }
+    if (typeof list == 'string') {
+      list = list.split(",")
+    }
+    let blag = false
+    for (let i in list) {
+      if(value.indexOf(list[i]) != -1){
+        blag = true
+        break
+      }
+    }
+    return blag
+  },
+  /* 是否标签*/
+  istags(str) {
+    let flag = true;
+    let ss = str.split(";");
+     ss = ss.filter(function(el,index,array){return el!= ''})
+     if(ss.length>3){
+       flag = false
+     }else{
+        for(var i=0;i<ss.length;i++){
+            if(ss[i].length > 5){
+                 flag = false
+                 break
+            }
+        }
+     }
+      return flag
+  }
+  
+}
+

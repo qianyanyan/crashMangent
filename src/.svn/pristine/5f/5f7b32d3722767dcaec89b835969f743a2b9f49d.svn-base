@@ -1,0 +1,593 @@
+<template>
+    <div> 
+        <el-tabs v-model="activeName" @tab-click="handleClick">
+            <el-tab-pane label="使用中" name="first"> 
+                  <table-use v-on:listenHandleAdd ="handleAdd" v-on:listenHandleEdit ="handleEdit" ref="editTable"></table-use>
+            </el-tab-pane>
+            <el-tab-pane label="已下线" name="second">
+                  <table-down ></table-down>
+            </el-tab-pane>
+        </el-tabs>
+       
+ 
+<!--编辑界面-->
+    <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
+        <el-form :model="editForm" label-width="80px" :rules="editFormRules" ref="editForm">
+            <el-form-item label="广告商名称" prop="insideMerchantId">
+                <el-select v-model="editForm.insideMerchantId" disabled>
+                    <el-option v-for="item in neameIds" :key="item.id" :label="item.comment" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="广告名称" prop="adName">
+                <el-input v-model="editForm.adName" auto-complete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="标签" prop="tags">
+                <el-input v-model="editForm.tags" auto-complete="off" type="text" placeholder="请以英文分号隔开"></el-input>
+            </el-form-item>
+        
+            <el-form-item label="目标路径" prop="targetUrl">
+                <el-input v-model="editForm.targetUrl" auto-complete="off" type="text" placeholder="请输入目标路径"></el-input>
+            </el-form-item>
+            <el-form-item label="申请条件" prop="details">
+                <el-input v-model="editForm.details" auto-complete="off" type="text" placeholder="请输入备注详情"></el-input>
+            </el-form-item>
+            <el-form-item label="系统标签" prop="sysTags">
+                <el-input v-model="editForm.sysTags" auto-complete="off" type="text" placeholder="请输入系统标签"></el-input>
+            </el-form-item>
+            <el-form-item label="上线位置" prop="check" >
+                <el-checkbox-group v-model="checkList">
+                <el-checkbox label="超市列表" style="width:45%"></el-checkbox>
+                <el-checkbox label="banner位"></el-checkbox>
+                </el-checkbox-group>
+            </el-form-item>
+            <el-form-item label="小图像" prop="img2" style="width:45%;float:left" >
+               <el-upload :headers="dataObjs" :data="dataObj" class="avatar-uploader" :action="baseurl" :show-file-list="false" :on-success="handleAvatarSuccessImg2">
+                    <img v-if="imageUrl2" :src="imageUrl2" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+                <label>(120*120px,JPG格式) </label>
+            </el-form-item>
+            <el-form-item label="banner位图片" prop="img1" style="width:55%;float:left" >
+                    <el-upload :headers="dataObjs" :data="dataObj" class="avatar-uploader" :action="baseurl" :show-file-list="false" :on-success="handleAvatarSuccessImg1">
+                        <img v-if="imageUrl1" :src="imageUrl1" class="avatar">
+                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                    </el-upload>
+                    <label>(750*320px,JPG格式)</label>
+                </el-form-item>
+            </el-form>
+          
+        </el-form>
+        <div slot="footer" class="dialog-footer" style="clear:both;text-align: center;">
+            <el-button @click.native="editFormVisible = false">取消</el-button>
+            <el-button type="primary" @click.native="editSubmit" :loading="editLoading">提交</el-button>
+        </div>
+    </el-dialog>
+
+    <!--新增界面-->
+    <el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
+        <el-form :model="addForm" label-width="80px" :rules="addFormRules" ref="addForm">
+            <el-form-item label="广告商名称" prop="insideMerchantId">
+                <el-select v-model="addForm.insideMerchantId" filterable placeholder="请选择">
+                    <!-- <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option> -->
+                    <el-option v-for="item in neameIds" :key="item.id" :label="item.comment" :value="item.id"></el-option>
+                </el-select>
+                <!-- <el-autocomplete  class="inline-input" v-model="state1" :fetch-suggestions="querySearchAsync" placeholder="请输入内容" @select="handleSelect"></el-autocomplete> -->
+            </el-form-item>
+            <el-form-item label="广告名称" prop="adName">
+                <el-input v-model="addForm.adName" auto-complete="off" placeholder="请输入广告名称"></el-input>
+            </el-form-item>
+            <el-form-item label="标签" prop="tags">
+                <el-input v-model="addForm.tags" auto-complete="off" type="text" placeholder="请以英文分号隔开"></el-input>
+            </el-form-item>
+            <el-form-item label="目标路径" prop="targetUrl">
+                <el-input v-model="addForm.targetUrl" auto-complete="off" type="text" placeholder="请输入目标路径"></el-input>
+            </el-form-item>
+            <el-form-item label="申请条件" prop="details">
+                <el-input v-model="addForm.details" auto-complete="off" type="text" placeholder="请输入申请条件，建议输入22个字符以内" ></el-input>
+            </el-form-item>
+            <el-form-item label="系统标签" prop="sysTags">
+                <el-input v-model="addForm.sysTags" auto-complete="off" type="text" placeholder="仅可添加一个标签，不超过3个字符"></el-input>
+            </el-form-item>
+            <el-form-item label="上线位置" prop="check" >
+                <el-checkbox-group v-model="checkList">
+                <el-checkbox label="超市列表" @change="isFalse=!isFalse"></el-checkbox>
+                <el-checkbox label="banner位"  @change="istrue=!istrue"></el-checkbox>
+                </el-checkbox-group>
+            </el-form-item>
+            <el-form-item label="小图像" prop="img2" style="width:45%;float:left" v-if="addForm.insideMerchantId && isFalse">
+                <el-upload :headers="dataObjs" :data="dataObj" class="avatar-uploader" :action="baseurl" :show-file-list="false" :on-success="handleAvatarSuccessImg4">
+                    <img v-if="imageUrl4" :src="imageUrl4" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+                <label>(120*120px,JPG格式) </label>
+            </el-form-item>
+             <!-- <el-form-item label="小图像" prop="img2" style="width:45%;float:left" >
+              <el-upload :headers="dataObjs" class="avatar-uploader" :action="baseurl" :show-file-list="false" :on-success="handleAvatarSuccessImg4">
+                <img v-if="imageUrl4" :src="imageUrl4" class="avatar">
+                <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+              </el-upload>
+              <label>(120*120px,JPG格式) </label>
+        </el-form-item> -->
+        <el-form-item label="banner位图片" prop="img1" style="width:55%;float:left" v-if="addForm.insideMerchantId && istrue">
+                <el-upload :headers="dataObjs" :data="dataObj" class="avatar-uploader" :action="baseurl" :show-file-list="false" :on-success="handleAvatarSuccessImg3">
+                    <img v-if="imageUrl3" :src="imageUrl3" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+                <label>(750*320px,JPG格式)</label>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer" align ="center">
+            <el-button @click.native="addFormVisible = false">取消</el-button>
+            <el-button type="primary" @click.native="addSubmit" :loading="addLoading">提交</el-button>
+        </div>
+    </el-dialog>
+
+</div>
+</template>
+<script>
+import tableUse from "../components/advites/tableUse";
+import tableDown from "../components/advites/tableDown";
+import { searchCMarket,addMerchantAd,ClickLog ,updatechCMarket, root } from "../api/api";
+import global from "../assets/js/global";
+
+export default {
+  data() {
+    const validatetag = (rule, value, callback) => {
+      if (!global.istags(value)) {
+        callback(new Error("最多可添加三个标签，每个标签不超过5个字符"));
+      } else {
+        callback();
+      }
+    };
+    return {
+      activeName: "first",
+      istab: "0",
+      totalPage: 0,
+      currentPage: 1,
+      pageSize: 10,
+      pageSizes: [10, 20, 30, 40],
+      search: "",
+      dialogImageUrl: "",
+      dialogVisible: false,
+      dataObjs: { authorization: localStorage.getItem("userId") },
+      // dataObj: { cmarketMerchantId: "" },
+       dataObj: {},
+      currentAddStatus: false,
+      listLoading: false,
+      currentStatus: false,
+      logining: false, 
+      checkList: ['超市列表','banner位'],
+      istrue:true,
+      isFalse:true,
+      tableData: [],
+      neameIds: [],
+      relIds: "",
+      tableFData: [],
+      // 编辑界面是否显示
+      editFormVisible: false,
+      editLoading: false,
+      editFormRules: {
+        insideMerchantId: [{type: "number", required: true, message: "请输入广告商名称", trigger: "blur" }],
+        adName: [{ required: true, message: "请输入广告名称", trigger: "blur" }],
+        tags: [
+          { required: true, message: "请输入标签", trigger: "blur" },
+          { required: true, trigger: "blur", validator: validatetag }
+        ],
+        img1: [
+            {required: true, message: 'banner位图片', trigger: 'change'}
+          ],
+           img2: [
+              {required: true, message: '请上传小图片',trigger: 'blur'}
+            ],
+         
+          sysTags: [{max: 3,message: "请输入3个以内字符", trigger: "blur" }],
+          targetUrl: [{ required: true, message: "请输入目标路径", trigger: "blur" }],
+        details: [{required: true, message: "请输入备注详情", trigger: "blur"},
+        { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }],
+        merchantId: [{type: "number", required: true,message: "请选择广告商ID", trigger: "change"}
+        ]
+      },
+      // 模糊搜素下拉框
+      restaurants: [],
+      state1: "",
+      //  timeout:  null,
+      // 编辑界面数据
+      editForm: {},
+      // 编辑界面临时存放数据，用于比较是否有修改
+      editFormContainer: {},
+      // 新增界面是否显示
+      addFormVisible: false,
+      addLoading: false,
+      addFormRules: {
+        insideMerchantId: [{type: "number", required: true, message: "请输入广告商名称", trigger: "blur" }],
+        adName: [{ required: true, message: "请输入广告名称", trigger: "blur" }],
+        tags: [
+          { required: true, message: "请输入标签", trigger: "blur" },
+          { required: true, trigger: "blur", validator: validatetag }
+        ],
+         img1: [
+              {required: true, message: '', trigger: 'blur'}
+            ],
+           img2: [
+              {required: true, message: '', trigger: 'blur'}
+            ],
+         sysTags: [{max: 3,message: "请输入3个以内字符", trigger: "blur" }],
+        targetUrl: [{ required: true, message: "请输入目标路径", trigger: "blur" }],
+        details: [{ required: true, message: "请输入备注详情", trigger: "blur"},
+        { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }],
+        merchantId: [{type: "number", required: true,message: "请选择广告商ID", trigger: "change"}
+        ]
+      },
+      // 新增界面数据
+      addForm: {},
+      merchantId: "",
+      onlineEnd: "",
+      onlineStart: "",
+      imageUrl1: "",
+      imageUrl2: "",
+      imageUrl3: "",
+      imageUrl4: "",
+      addbannerNo: "",
+      addweightNo: "",
+      baseurl: "",
+      imgUrl: "",
+        // 默认下载已上线的exl表格
+      // formAction: process.env.API_ROOT + '/engine-console/console/cmarketMerchantAd/cAdDOExportExcel.do'
+    };
+  },
+  components: {
+    tableUse,
+    tableDown
+  },
+  mounted() {
+    let vm = this;
+    this.baseurl = process.env.API_ROOT+ root +  '/engine-console/console/uploadFile/uploadPicture.do';
+    // this.searMerchantAd(userParams)
+    // this.searchCMarket()
+    this.createShow = global.judgePermissionName(
+      "advertis:create",
+      this.$store.getters.getPermissionName
+    );
+    this.modifyShow = global.judgePermissionName(
+      "advertis:modify",
+      this.$store.getters.getPermissionName
+    );
+    this.deleteShow = global.judgePermissionName(
+      "advertis:delete",
+      this.$store.getters.getPermissionName
+    );
+    this.lookShow = global.judgePermissionName(
+      "advertis:view",
+      this.$store.getters.getPermissionName
+    );
+    this.searchCMarket()
+  },
+  computed: {
+    
+  },
+  watch: {
+    checkList(val){
+       console.log(val)
+       console.log(this.istrue)
+       console.log(this.isFalse)
+     
+    }
+  },
+  methods: {
+    handleClick(tab, event) {
+      this.istab = tab.index;
+      this.$store.commit("changeAdvertise", { currentPage: 1 });
+    },
+    // 下载excel
+    //  downloadTable () {
+    //     document.getElementById('myForm').submit()
+    //   },
+    searchCMarket() {
+        let self = this;
+        searchCMarket().then(data => {
+            if (data.data.code === 200) {
+                self.neameIds = data.data.data;
+            }
+        })
+    },
+    //日期的禁止选择
+    changeimg(file, fileList) {
+      console.log(file);
+      console.log(fileList);
+    },
+    changeimage(file, fileList) {
+      this.img2 = file.response.data;
+    },
+    handleRemove(file, fileList) {
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview(file) {
+      this.dialogImageUrl = file.url;
+      this.dialogVisible = true;
+    },
+   
+    // 显示编辑界面
+    handleEdit:function(row) {
+      this.editFormVisible = true;
+      this.editForm = Object.assign({}, row);
+      this.editFormContainer = Object.assign({}, row);
+      this.imageUrl1  = this.editForm.img1 == '--' ? "" : `${process.env.IMG_SERVER}` + this.editForm.img1;
+      this.imageUrl2 = this.editForm.img2 == '--' ? "" : `${process.env.IMG_SERVER}` + this.editForm.img2;
+      this.img1 = this.editForm.img1;
+      this.img2 = this.editForm.img2;
+      this.checkList =['超市列表','banner位'];
+       this.istrue =  this.isFalse =true;
+     
+     
+    },
+    // 显示新增界面
+    handleAdd() {
+      this.addFormVisible = true;
+      this.addForm = {};
+       this.addForm.img1 = `${process.env.IMG_SERVER}`
+       this.addForm.img2 = `${process.env.IMG_SERVER}`
+      this.imageUrl3 = "";
+      this.imageUrl4 = "";
+     this.checkList =['超市列表','banner位'];
+     this.istrue =  this.isFalse =true;
+
+
+    },
+    beforeAvatarUpload(file) {
+      const isLt2M = file.size / 1024 / 1024 < 2;
+      if (!isLt2M) {
+        this.$message.error("上传头像图片大小不能超过 2MB!");
+      }
+      return isLt2M;
+    },
+
+    handleAvatarSuccessImg1(res, file) {
+      if (res.code == 200) {
+        this.imageUrl1 = URL.createObjectURL(file.raw);
+        this.img1 = res.data;
+      } else {
+        this.$confirm(res.message, "提示");
+      }
+    },
+    handleAvatarSuccessImg2(res, file) {
+      if (res.code == 200) {
+        this.imageUrl2 = URL.createObjectURL(file.raw);
+        this.img2 = res.data;
+      } else {
+        this.$confirm(res.message, "提示");
+      }
+    },
+    handleAvatarSuccessImg3(res, file) {
+      if (res.code == 200) {
+        this.imageUrl3 = URL.createObjectURL(file.raw);
+        this.img3 = res.data;
+      } else {
+        this.$confirm(res.message, "提示");
+      }
+    },
+    handleAvatarSuccessImg4(res, file) {
+      if (res.code == 200) {
+        this.imageUrl4 = URL.createObjectURL(file.raw);
+        this.img4 = res.data;
+      } else {
+        this.$confirm(res.message, "提示");
+      }
+    },
+    // 编辑
+    editSubmit() {
+      this.$refs.editForm.validate(valid => {
+         if( this.imageUrl2  == ""){
+              vm.$message({
+                message: '请先上传小图像', 
+                type: 'error'
+              })
+            return
+          }
+           if( this.imageUrl1  == ""){
+              vm.$message({
+                message: '请先上传banner位图片', 
+                type: 'error'
+              })
+            return
+          }
+        if (valid) {
+         
+          this.$confirm("确认提交吗？", "提示", {}).then(() => {
+            this.editLoading = true;
+            let userParams = {
+              adId: this.editForm.adId,
+              insideMerchantId:this.editForm.insideMerchantId,
+              adName: this.editForm.adName,
+              tags: this.editForm.tags,
+              sysTags:this.editForm.sysTags,
+              targetUrl: this.editForm.targetUrl,
+              details: this.editForm.details,
+              img1: this.img1,
+              img2: this.img2,
+            };
+            let vm = this;
+               updatechCMarket(userParams).then((data) => {
+                  this.editFormVisible = this.editLoading = false
+                  this.$refs['editForm'].resetFields()
+                  if (data.data.code == 200 && data.data.message.toLowerCase() == 'ok') {
+                      this.$message({
+                          message: '提交成功',
+                          type: 'success'
+                      })
+                      
+                       var _this=this;
+                       _this.$refs.editTable.searMerchantAd()
+                  } else {
+                      this.$message({
+                          message: data.data.message,
+                          type: 'error'
+                      })
+                  }
+              })
+            
+          });
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    // 新增
+    addSubmit() {
+      this.$refs.addForm.validate(valid => {
+         if( this.imageUrl4  == ""){
+              vm.$message({
+                message: '请先上传小图像', 
+                type: 'error'
+              })
+            return
+          }
+           if( this.imageUrl3  == ""){
+              vm.$message({
+                message: '请先上传banner位图片', 
+                type: 'error'
+              })
+            return
+          }
+         if( this.imageUrl  == ""){
+              vm.$message({
+                message: '请先上传小图像', 
+                type: 'error'
+              })
+            return
+          }
+        if (valid) {
+          this.$confirm("确认提交吗？", "提示", {}).then(() => {
+            this.addLoading = true;
+            let userParams = {
+              insideMerchantId:this.addForm.insideMerchantId,
+              adName: this.addForm.adName,
+              tags: this.addForm.tags,
+              targetUrl: this.addForm.targetUrl,
+              details: this.addForm.details,
+              sysTags:this.addForm.sysTags,
+              img1: this.img3,
+              img2: this.img4,
+            };
+            let vm = this;
+             addMerchantAd(userParams).then((data) => {
+                  this.addLoading = this.addFormVisible = false
+                  this.$refs['addForm'].resetFields()
+                  if (data.data.code == 200 && data.data.message.toLowerCase() == 'ok') {
+                      this.$message({
+                          message: '提交成功',
+                          type: 'success'
+                      })
+                     
+                       var _this=this;
+                       _this.$refs.editTable.searMerchantAd()
+                  } else {
+                      this.$message({
+                          message: data.data.message,
+                          type: 'error'
+                      })
+                  }
+              })
+          });
+        }
+      });
+    }
+  }
+};
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+.is-required .el-form-item__label {
+  text-align: left !important;
+}
+.el-tabs__nav-scroll .el-tabs__active-bar {
+  background-color: #fff !important;
+}
+.el-tabs .el-tabs__item {
+  font-size: 20px !important;
+  background: #ccc;
+  margin-right: 20px;
+  border: 1px solid #bfcbd9;
+}
+.el-tabs__item.is-active {
+  color: #20a0ff;
+  background: red;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 120px !important;
+  height: 120px !important;
+  line-height: 120px !important;
+  text-align: center;
+  border: 1px dashed #c0ccda;
+  background-color: #fbfdff;
+}
+.avatar {
+  width: 120px !important;
+  height: 120px !important;
+  display: block;
+}
+.avatar-uploader .el-upload,
+.el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+  border-color: #409eff;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+}
+body {
+  margin: 0px;
+  padding: 0px;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
+    Microsoft YaHei, SimSun, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+#app {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  width: 100%;
+}
+.el-submenu [class^="fa"] {
+  vertical-align: baseline;
+  margin-right: 10px;
+}
+.el-menu-item [class^="fa"] {
+  vertical-align: baseline;
+  margin-right: 10px;
+}
+.toolbar {
+  padding: 10px;
+  margin: 10px 0px;
+}
+.toolbar .el-form-item {
+  margin-bottom: 10px;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.2s ease;
+}
+.fade-enter,
+.fade-leave-active {
+  opacity: 0;
+}
+</style>

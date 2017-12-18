@@ -1,0 +1,527 @@
+<template>
+  <div>
+    <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+      <el-form :inline="true" :model="filters">
+        <el-form-item>
+          <el-button type="primary" @click="handleAdd" v-if="createShow">新增</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-select v-model="filters.value">
+            <el-option
+              v-for="item in filters.options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-date-picker
+            v-model="startDate"
+            type="date"
+            format="yyyy-MM-dd"
+            placeholder="选择开始日期"
+            :picker-options="startPickerOptions">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-date-picker
+            v-model="endDate"
+            type="date"
+            format="yyyy-MM-dd"
+            placeholder="选择结束日期"
+            :picker-options="endPickerOptions">
+          </el-date-picker>
+
+        </el-form-item>
+        <el-form-item>
+          <el-button v-if="lookShow" type="primary"
+                     v-on:click="searchMenu({menuName: filters.menuName,menuStatus: filters.value, startCreatetime: startDate, endCreatetime: endDate})">
+            查询
+          </el-button>
+
+        </el-form-item>
+        <el-form-item>
+          <el-form-item>
+            <el-input v-model="search" placeholder="请输入关键字"></el-input>
+          </el-form-item>
+        </el-form-item>
+      </el-form>
+    </el-col>
+
+    <el-table
+      ref="singleTable"
+      :data="searchData"
+      highlight-current-row
+
+      v-loading="listLoading">
+      <el-table-column
+        property="menuName"
+        label="菜单名">
+      </el-table-column>
+      <el-table-column
+        property="menuUrl"
+        label="菜单路径">
+      </el-table-column>
+      <el-table-column
+        property="menuIcon"
+        label="菜单图标">
+      </el-table-column>
+      <el-table-column
+        property="fmenu"
+        label="菜单归类">
+      </el-table-column>
+      <el-table-column
+        property="menuOrder"
+        label="菜单排序">
+      </el-table-column>
+      <el-table-column
+        property="menuStatus"
+        label="菜单状态">
+      </el-table-column>
+      <el-table-column
+        property="createTimeStr"
+        label="创建时间">
+      </el-table-column>
+      <el-table-column label="操作" width="150">
+        <template scope="scope">
+          <el-button size="small" @click="handleEdit(scope.$index, scope.row)" v-if="modifyShow">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)" v-if="deleteShow">删除
+          </el-button>
+        </template>
+      </el-table-column>
+
+    </el-table>
+    <el-col :span="24" class="toolbar">
+      <el-pagination layout="total,sizes,prev, pager, next, jumper" @current-change="handleCurrentChange"
+                     @size-change="handleSizeChange"
+                     :page-size="pageSize" :page-sizes="[10, 20, 30, 40]" :total="total" style="float:right;">
+      </el-pagination>
+    </el-col>
+
+    <!--编辑界面-->
+    <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
+      <el-form :model="editForm" label-width="80px" :rules="editFormRules" ref="editForm">
+        <el-form-item label="菜单名" prop="menuName">
+          <el-input v-model="editForm.menuName" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单路径" prop="menuUrl">
+          <el-input v-model="editForm.menuUrl" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单图标" prop="menuIcon">
+          <el-input v-model="editForm.menuIcon" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单排序" prop="menuOrder">
+          <el-input v-model="editForm.menuOrder" auto-complete="off" type="number" min="0"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单状态">
+          <el-switch on-text="启用" off-text="禁用" v-model="currentStatus"></el-switch>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native="editFormVisible = false">取消</el-button>
+        <el-button type="primary" @click.native="editSubmit" :loading="editLoading">提交</el-button>
+      </div>
+    </el-dialog>
+
+    <!--新增界面-->
+    <el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
+      <el-form :model="addForm" label-width="110px" :rules="addFormRules" ref="addForm">
+        <el-form-item label="菜单名" prop="menuName">
+          <el-input v-model="addForm.menuName" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单路径" prop="menuUrl">
+          <el-input v-model="addForm.menuUrl" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单图标" prop="menuIcon">
+          <el-input v-model="addForm.menuIcon" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单排序" prop="menuOrder">
+          <el-input v-model="addForm.menuOrder" auto-complete="off" type="number" min="0"></el-input>
+        </el-form-item>
+        <el-form-item label="菜单状态">
+          <el-switch on-text="启用" off-text="禁用" v-model="addForm.menuStatus"></el-switch>
+        </el-form-item>
+        <el-form-item label="请选择菜单归类">
+          <el-select v-model="addForm.fId" placeholder="请选择">
+            <el-option
+              v-for="item in fList"
+              :key="item.id"
+              :label="item.menuName"
+              :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native="addFormVisible = false">取消</el-button>
+        <el-button type="primary" @click.native="addSubmit" :loading="addLoading">提交</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  import {searchMenu, searchFMenu, modifyMenu, deleteMenu, addMenu} from '../api/api'
+  import global from '../assets/js/global'
+
+  export default {
+    data() {
+      // 编辑界面临时存放数据，用于比较是否有修改
+      let editFormContainer = {}
+      return {
+        listLoading: false,
+        currentStatus: false,
+        logining: false,
+        tableData: [],
+        allData: [],
+        currentPage: 1,
+        pageSize: 10,
+        pageSizes: [10, 20, 30, 40],
+        total: 0,
+        // 编辑界面是否显示
+        editFormVisible: false,
+        editLoading: false,
+        editFormRules: {
+          menuName: [
+            {required: true, message: '请输入菜单名', trigger: 'blur'}
+          ]
+        },
+        // 编辑界面数据
+        editForm: {},
+        createShow: false,
+        modifyShow: false,
+        deleteShow: false,
+        lookShow: false,
+        // 新增界面是否显示
+        addFormVisible: false,
+        addLoading: false,
+        addFormRules: {
+          menuName: [
+            {required: true, message: '请输入菜单名', trigger: 'blur'}
+          ],
+          // menuUrl: [
+          //   {required: true, message: '请输入菜单路径', trigger: 'blur'}
+          // ],
+          menuOrder: [
+            {required: true, message: '请输入菜单排序', trigger: 'blur'}
+          ]
+        },
+        // 新增界面数据
+        addForm: {
+          menuOrder: '0',
+          menuName: '',
+          menuUrl: '',
+          menuIcon: '',
+          menuStatus: true,
+          fId: ''
+        },
+        filters: {
+          value: '',
+          menuName: '',
+          options: [{
+            value: '',
+            label: '全部'
+          }, {
+            value: '0',
+            label: '启用'
+          }, {
+            value: '1',
+            label: '禁用'
+          }]
+        },
+        startPickerOptions: this.beginDate(),
+        startDate: '',
+        endPickerOptions: this.processDate(),
+        endDate: '',
+        fList: [{id: 0, menuName: '请选择'}],
+        search: ''
+      }
+    },
+    components: {},
+    mounted () {
+      this.searchMenu({
+        menuName: this.filters.menuName,
+        menuStatus: this.filters.value,
+        startCreatetime: this.startDate,
+        endCreatetime: this.endDate
+      })
+      this.searchFMenu()
+      this.createShow = global.judgePermissionName('menu:create', this.$store.getters.getPermissionName)
+      this.modifyShow = global.judgePermissionName('menu:modify', this.$store.getters.getPermissionName)
+      this.deleteShow = global.judgePermissionName('menu:delete', this.$store.getters.getPermissionName)
+      this.lookShow = global.judgePermissionName('menu:view', this.$store.getters.getPermissionName)
+    },
+    computed: {
+      searchData () {
+        var search = this.search;
+        if (search) {
+          search = search.toLowerCase()
+         let ddd = this.tableData.filter(function(item) {
+            return Object.keys(item).some(function(key) {
+              item[key] = item[key] == undefined ? '' : item[key]
+              if (key == 'menuName' || key == 'menuUrl' || key == 'menuIcon' || key == 'fmenu' || key == 'menuOrder' || key == 'menuStatus' || key == 'createTime') {
+                return String(item[key]).toLowerCase().indexOf(search) > -1
+              }
+            })
+          })
+          console.log(ddd)
+          this.total =ddd.length
+          ddd = ddd.slice((this.currentPage - 1) * 10, (this.currentPage - 1) * 10 + this.pageSize)
+          return ddd
+        }else{
+           this.total =this.tableData.length
+        }
+        return this.allData;
+      }
+     
+    },
+    methods: {
+      processDate () {
+        let vm = this
+        return {
+          disabledDate (time) {
+            if (vm.startDate) {
+              return new Date(vm.startDate).getTime() > time.getTime()
+            }
+          }
+        }
+      },
+      beginDate () {
+        let vm = this
+        return {
+          disabledDate (time) {
+            if (vm.endDate) {
+              return new Date(vm.endDate).getTime() < time.getTime()
+            }
+          }
+        }
+      },
+      searchFMenu(menuFParams) {
+        let vm = this
+        searchFMenu(menuFParams).then(data => {
+          if (data.data.code === 200) {
+            vm.fList = vm.fList.slice(0, 1).concat(data.data.data)
+          }
+        })
+      },
+      searchMenu (menuParams) {
+        let vm = this
+        if (typeof menuParams.startCreatetime == 'object') {
+          menuParams.startCreatetime = Date.parse(menuParams.startCreatetime)
+        }
+        if (typeof menuParams.endCreatetime == 'object') {
+          menuParams.endCreatetime = Date.parse(menuParams.endCreatetime)
+        }
+        searchMenu(menuParams).then(data => {
+          if (data.data.code === 200) {
+            vm.tableData = data.data.data;
+            vm.allData = data.data.data;
+            vm.total = data.data.total;
+            for (var i = 0; i < vm.allData.length; i++) {
+              vm.allData[i].menuStatus = vm.allData[i].menuStatus == 0 ? '启用' : '禁用'
+            }
+            this.fPage(vm.allData)
+          }
+        })
+      },
+      handleSizeChange(size) {
+        this.pageSize = size
+        this.fPage(this.tableData)
+      },
+      fPage(list) {
+        this.allData = list.slice((this.currentPage - 1) * 10, (this.currentPage - 1) * 10 + this.pageSize)
+      },
+      handleCurrentChange(val) {
+        this.currentRow = val;
+        this.currentPage = val
+        this.fPage(this.tableData)
+      },
+      // 显示编辑界面
+      handleEdit (index, row) {
+        this.editFormVisible = true
+        this.editForm = Object.assign({}, row)
+        this.editFormContainer = Object.assign({}, row)
+        this.editFormContainer.currentStatus = this.currentStatus = row.menuStatus == '启用'
+      },
+      // 显示新增界面
+
+      handleAdd() {
+        this.addFormVisible = true
+      },
+      handleDel (index, row) {
+        this.$confirm('确认删除该记录吗?', '提示', {
+          type: 'warning'
+        }).then(() => {
+          this.listLoading = true
+          let arr = []
+          arr.push(row.id)
+          let para = {ids: arr}
+          deleteMenu(para).then((data) => {
+            this.listLoading = false
+            if (data.data.code == 200 && data.data.message.toLowerCase() == 'ok') {
+              this.$message({
+                message: '删除成功',
+                type: 'success'
+              })
+              this.searchMenu({
+                menuName: this.filters.menuName,
+                menuStatus: this.filters.value,
+                startCreatetime: this.startDate,
+                endCreatetime: this.endDate
+              })
+              this.$store.commit('deleteMenu', row.id)
+              this.searchFMenu()
+            } else {
+              this.$message({
+                message: data.data.message,
+                type: 'error'
+              })
+            }
+          })
+        })
+      },
+      // 编辑
+      editSubmit () {
+        this.$refs.editForm.validate((valid) => {
+          if (valid) {
+            this.$confirm('确认提交吗？', '提示', {}).then(() => {
+              this.editLoading = true
+              if (this.editFormContainer.menuName == this.editForm.menuName && this.editFormContainer.menuUrl == this.editForm.menuUrl && this.editFormContainer.menuIcon == this.editForm.menuIcon && this.editFormContainer.menuOrder == this.editForm.menuOrder && this.editFormContainer.currentStatus == this.currentStatus) {
+                this.editFormVisible = this.editLoading = false
+                this.$refs['editForm'].resetFields()
+                this.$message({
+                  message: '编辑数据不能与原数据相同',
+                  type: 'error'
+                })
+              } else {
+                let menuParams = {
+                  id: this.editForm.id,
+                  menuName: this.editForm.menuName,
+                  menuUrl: this.editForm.menuUrl,
+                  menuIcon: this.editForm.menuIcon,
+                  menuOrder: this.editForm.menuOrder,
+                  menuStatus: this.currentStatus ? 0 : 1
+                }
+                modifyMenu(menuParams).then(data => {
+                  this.editFormVisible = this.editLoading = false
+                  if (data.data.code == 200 && data.data.message.toLowerCase() == 'ok') {
+                    this.$message({
+                      message: '提交成功',
+                      type: 'success'
+                    })
+                    this.editForm.menuStatus = this.editForm.menuStatus == '启用' ? 0 : 1
+                    this.$store.commit('changeMenuInfo', this.editForm)
+                    this.searchMenu({
+                      menuName: this.filters.menuName,
+                      menuStatus: this.filters.value,
+                      startCreatetime: this.startDate,
+                      endCreatetime: this.endDate
+                    })
+                  } else {
+                    this.$message({
+                      message: data.data.message,
+                      type: 'error'
+                    })
+                  }
+                  this.$refs['editForm'].resetFields()
+                })
+              }
+            })
+          } else {
+            console.log('error submit!!')
+            return false
+          }
+        })
+      },
+      // 新增
+      addSubmit () {
+        this.$refs.addForm.validate((valid) => {
+          if (valid) {
+            this.$confirm('确认提交吗？', '提示', {}).then(() => {
+              this.addLoading = true
+              let addUserParams = this.addForm
+              addUserParams.menuStatus = this.addForm.menuStatus ? 0 : 1
+              addUserParams.fId = addUserParams.fId ? addUserParams.fId : 0
+              addMenu(addUserParams).then((data) => {
+                this.addLoading = this.addFormVisible = false
+                this.$refs['addForm'].resetFields()
+                if (data.data.code == 200 && data.data.message.toLowerCase() == 'ok') {
+                  this.$message({
+                    message: '提交成功',
+                    type: 'success'
+                  })
+                  this.searchMenu({
+                    menuName: this.filters.menuName,
+                    menuStatus: this.filters.value,
+                    startCreatetime: this.startDate,
+                    endCreatetime: this.endDate
+                  })
+                  this.searchFMenu()
+                } else {
+                  this.$message({
+                    message: data.data.message,
+                    type: 'error'
+                  })
+                }
+              })
+            })
+          }
+        })
+      }
+    },
+    watch: {
+      addFormVisible (val) {
+        if (!val) {
+          this.$refs['addForm'].resetFields()
+          this.addForm.menuStatus = true
+        }
+      },
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  body {
+    margin: 0px;
+    padding: 0px;
+    font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .el-submenu [class^=fa] {
+    vertical-align: baseline;
+    margin-right: 10px;
+  }
+
+  .el-menu-item [class^=fa] {
+    vertical-align: baseline;
+    margin-right: 10px;
+  }
+
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0px;
+  }
+
+  .toolbar .el-form-item {
+    margin-bottom: 10px;
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: all .2s ease;
+  }
+
+  .fade-enter,
+  .fade-leave-active {
+    opacity: 0;
+  }
+
+
+</style>
+
+
+
+

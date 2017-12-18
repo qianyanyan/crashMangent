@@ -1,0 +1,88 @@
+<template>
+  <div>
+    <el-table
+      ref="outlineTable"
+      :data="getOutlineTable"
+      highlight-current-row
+      style="width: 100%">
+      <el-table-column
+        property="adName"
+        label="广告名称">
+      </el-table-column>
+
+      <el-table-column
+        property="bannerPositionName"
+        label="banner位位置">
+      </el-table-column>
+      <el-table-column label="目标路径">
+        <template scope="scope">
+          <a :href="scope.row.targetURL" target="_blank" v-text="scope.row.targetURL"></a>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="onlineRealStart"
+        label="实际上线时间">
+      </el-table-column>
+      <el-table-column
+        property="onlineRealEnd"
+        label="实际下线时间">
+      </el-table-column>
+      <el-table-column label="操作" width="150">
+        <template scope="scope">
+          <!--v-if="infoShow"-->
+          <el-button type="primary" size="small" @click="handleToDetails(scope.row)">查看</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-col :span="24" class="toolbar">
+      <el-pagination class="pull-right" layout="total, sizes, prev, pager, next" @current-change="handleCurrentChange" @size-change="handleSizeChange" :page-size="outLineData.pageSize" :page-sizes="outLineData.pageSizes" :total="outLineData.total">
+      </el-pagination>
+    </el-col>
+  </div>
+</template>
+<script>
+  import global from '../../assets/js/global'
+  export default {
+    data () {
+      return {
+        search: '',
+        outLineData: {
+          currentPage: 0,
+          pageSize: 0,
+          pageSizes: [10, 20, 30, 40],
+          total: 0,
+          list: []
+        }
+      }
+    },
+    methods: {
+      handleCurrentChange (page) {
+        this.$store.commit('changeOutLineTableData', {currentPage: page})
+      },
+      handleSizeChange (size) {
+        this.$store.commit('changeOutLineTableData', {pageSize: size})
+      },
+      handleToDetails (row) {
+        this.$router.push('/bannerManage/details/2/' + row.id)
+      }
+    },
+    computed: {
+      getOutlineTable () {
+        let data = this.$store.getters.getOutlineData
+        this.outLineData.currentPage = data.currentPage
+        this.outLineData.pageSize = data.pageSize
+        this.outLineData.total = data.total
+        let list = global.replaceCellInfo(data.list, '--')
+        this.outLineData.list = global.fPage(list, data.currentPage, data.pageSize)
+        return this.outLineData.list
+      }
+    }
+  }
+</script>
+
+<style  lang="less" rel="stylesheet/less" scoped>
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+</style>

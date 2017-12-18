@@ -1,0 +1,67 @@
+<template>
+  <div>
+    <el-tree
+      :data="data"
+      :props="defaultProps"
+      @node-click="handleNodeClick"
+      default-expand-all
+      highlight-current>
+    </el-tree>
+
+  </div>
+</template>
+
+<script>
+  import onlineTable from '../components/bannerManage/onlineTable.vue'
+  import outlineTable from '../components/bannerManage/outlineTable.vue'
+  export default {
+    data () {
+      return {
+        data: [{
+          label: '现金超市H5页面',
+          children: [{
+            label: '图片运营位_banner01'
+          },
+          {
+            label: '图片运营位_banner02'
+          },
+          {
+            label: '图片运营位_banner03'
+          },
+          {
+            label: '图片运营位_banner04'
+          },
+          {
+            label: '图片运营位_banner05'
+          },
+          {
+            label: '图片运营位_banner06'
+          },
+          {
+            label: '图片运营位_banner07'
+          }]
+        }],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        }
+      }
+    },
+    mounted () {
+    },
+    methods: {
+      handleNodeClick (data) {
+        console.log(data)
+      }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-tree {
+    float: left;
+    width: 200px;
+    border: 0;
+  }
+</style>

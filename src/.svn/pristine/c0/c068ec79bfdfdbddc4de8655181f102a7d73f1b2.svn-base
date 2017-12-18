@@ -1,0 +1,160 @@
+<template>
+  <div>
+    <el-table
+      ref="marketTable"
+      :data="getFutureMarketTable"
+      highlight-current-row
+      style="width: 100%">
+      <el-table-column
+        property="adId"
+        label="广告名称"
+        width="120">
+      </el-table-column>
+      <el-table-column
+        label="小图像"
+        width="140">
+        <template scope="scope">
+          <img class="pic-small" :src="scope.row.img2" alt="pic" v-if="scope.row.img2 != '--'">
+          <span v-else v-text="scope.row.img2"></span>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="tags"
+        label="标签">
+      </el-table-column>
+      <el-table-column label="目标路径">
+        <template scope="scope">
+          <a v-if="scope.row.targetUrl != '--'" :href="scope.row.targetUrl" target="_blank" v-text="scope.row.targetUrl"></a>
+          <span v-else v-text="scope.row.targetUrl"></span>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="onlineStart"
+        label="设定上线时间">
+      </el-table-column>
+      <el-table-column
+        property="onlineEnd"
+        label="设定下线时间">
+      </el-table-column>
+      <el-table-column label="操作" width="230">
+        <template scope="scope">
+          <el-button type="primary" size="small" @click="handleToDetails(scope.row)">查看</el-button>
+          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button type="success" size="small" @click="handleOnline(scope.row)">立即上线</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-col :span="24" class="toolbar">
+      <el-pagination
+        class="pull-right"
+        layout="total, sizes, prev, pager, next"
+        @current-change="handleCurrentChange"
+        @size-change="handleSizeChange"
+        :current-page="marketFutureListData.currentPage"
+        :page-size="marketFutureListData.pageSize"
+        :page-sizes="marketFutureListData.pageSizes"
+        :total="marketFutureListData.total">
+      </el-pagination>
+    </el-col>
+     <detailedit></detailedit>
+  </div>
+</template>
+<script>
+  import { immediatelyOnline } from '../../api/api'
+  import global from '../../assets/js/global'
+  import detailedit from './detailEdit.vue'
+  import bus from '../../assets/js/eventBus'
+  export default {
+    data () {
+      return {
+        search: '',
+        marketFutureListData: {
+          currentPage: 0,
+          pageSize: 0,
+          pageSizes: [10, 20, 30, 40],
+          total: 0,
+          list: []
+        }
+      }
+    },
+     components: {detailedit},
+    methods: {
+      handleOnline (row) {
+        let vm = this
+        let params = {
+          id: row.id,
+          adStatus: 'I'
+        }
+        vm.$confirm('确认上线吗？', '提示', {}).then(() => {
+          immediatelyOnline(params).then(res => {
+            if (res.data.code == 200) {
+              vm.$message({
+                message: '上线成功',
+                type: 'success'
+              })
+              bus.$emit('noticeGetFutureTable', vm.marketFutureListData)
+            } else {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          })
+        }, cancel => {
+          console.log(cancel)
+        })
+      },
+      handleCurrentChange (page) {
+        let vm = this
+        vm.marketFutureListData.currentPage = page
+        bus.$emit('noticeGetFutureTable', vm.marketFutureListData)
+      },
+      handleSizeChange (size) {
+        let vm = this
+        vm.marketFutureListData.pageSize = size
+        bus.$emit('noticeGetFutureTable', vm.marketFutureListData)
+      },
+      handleToDetails (row) {
+//        this.$router.push('/bannerManage/details/1/' + row.id)
+      },
+      handleEdit(row) {
+           let editFormVisible = true
+           bus.$emit('handleEditBox', {
+            editFormVisible: editFormVisible,
+            detail: row
+          })
+      },
+    },
+    computed: {
+      getFutureMarketTable () {
+        let vm = this
+        let data = vm.$store.getters.getFutureMarketData
+        vm.marketFutureListData.currentPage = data.currentPage
+        vm.marketFutureListData.pageSize = data.pageSize
+        vm.marketFutureListData.total = data.total
+        let list = global.replaceCellInfo(data.list, '--')
+        for (let j = 0; j < list.length; j++) {
+          if (list[j].onlineStart != '--') {
+            list[j].onlineStart = global.formatTime(list[j].onlineStart)
+          }
+          if (list[j].onlineEnd != '--') {
+            list[j].onlineEnd = global.formatTime(list[j].onlineEnd)
+          }
+        }
+        vm.marketFutureListData.list = list
+        return vm.marketFutureListData.list
+      }
+    }
+  }
+</script>
+
+<style  lang="less" rel="stylesheet/less" scoped>
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+  .pic-small {
+    width: 100px;
+    height: 100px;
+  }
+</style>

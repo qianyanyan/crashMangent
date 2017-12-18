@@ -1,0 +1,158 @@
+import { requestLogin, toIndex, searMerchantAd,searchCMarket } from '../api/api'
+
+export default {
+  // 登陆后，获取用户信息
+  getUser (context, value) {
+    // ajax请求
+    requestLogin(value.loginParams).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeUserId', val)
+    })
+  },
+  // 获取首页信息
+  getIndexInfo (context, value) {
+    toIndex(value.userId).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeIndexInfo', val)
+    })
+  },
+  // 获取已在线表格
+  getOnlineTable (context, value) {
+    let response = {
+      data: {
+        bannerPositionList: [
+          {
+            id: 1,
+            orderNo: 1,
+            bannerPositionName: '1号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称1',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 2,
+            orderNo: 2,
+            bannerPositionName: '2号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称2',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 3,
+            orderNo: 3,
+            bannerPositionName: '3号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称3',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 4,
+            orderNo: 4,
+            bannerPositionName: '4号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称5',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 5,
+            orderNo: 5,
+            bannerPositionName: '5号banner位',
+            status: '启用中',
+            picURL: 'http://pic.baidu.com/lksdklskdls.jpg',
+            comment: 'banner位描述',
+            adName: '广告名称1',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineTaskEnd: '2017-10-30 05:41:08'
+          }
+        ]
+      },
+      total: 5,
+      message: 'OK',
+      code: 200
+    }
+    let val = {
+      data: response,
+      callback: value.callback
+    }
+    context.commit('getOnlineTable', val)
+  },
+  getOutlineTable (context, value) {
+    let response = {
+      'data': {
+        'bannerPositionList': [
+          {
+            id: 1,
+            adName: '广告名称1',
+            bannerPositionName: '1号banner位',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineRealEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 2,
+            adName: '广告名称2',
+            bannerPositionName: '1号banner位',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineRealEnd: '2017-10-30 05:41:08'
+          },
+          {
+            id: 3,
+            adName: '广告名称3',
+            bannerPositionName: '1号banner位',
+            targetURL: 'http://www.baidu.com',
+            onlineRealStart: '2017-10-25 05:41:08',
+            onlineRealEnd: '2017-10-30 05:41:08'
+          }
+        ]
+      },
+      total: 3,
+      message: 'OK',
+      code: 200
+    }
+    let val = {
+      data: response,
+      callback: value.callback
+    }
+    context.commit('getOutlineTable', val)
+  },
+  getAdvertisTable(context, value){
+      searMerchantAd(value).then(data => {
+          let advertisData = {
+            currentPage: 1,
+            total:data.data.total,
+            list:data.data.data,
+            pageSize:( data.data.pageSize ? data.data.pageSize:10 ),
+          }
+          let val = {
+            data: advertisData,
+            callback: value.callback
+          }
+        context.commit('getAdvertisTable', val)
+      })
+  },
+ 
+}

@@ -1,0 +1,260 @@
+<template>
+<div>
+     <!-- 查询搜索 -->
+  <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
+    <el-form :inline="true" :model="filters">
+      <el-form-item>
+        <el-input v-model="filters.insideMerchantId" placeholder="请输入广告商外部ID"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-date-picker v-model="filters.startDate" type="date" format="yyyy-MM-dd" placeholder="选择开始日期" :picker-options="startPickerOptions" @change="selectedOnline(filters.startDate)">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-date-picker v-model="filters.endDate" type="date" format="yyyy-MM-dd" placeholder="选择结束日期" :picker-options="endPickerOptions" @change="selectedEnd(filters.endDate)">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="search" placeholder="请输入关键字"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" v-on:click="searMerchantAd">查询</el-button>
+      </el-form-item>
+   
+      <el-button class="filter-item" type="primary" icon="document"  @click="handleExportExce()">导出数据</el-button>
+    </el-form>
+  </el-col>
+  <!-- 列表 -->
+  <el-table ref="singleTable" :data="getAdvertisDown" highlight-current-row v-loading="listLoading" style="width: 100%">
+    <el-table-column type="selection" width="55">
+    </el-table-column>
+    <el-table-column property="insideMerchantId" label="广告商内部ID">
+    </el-table-column>
+    <el-table-column property="externalMerchantId" label="广告商外部ID">
+    </el-table-column>
+    <el-table-column width="100" property="adName" label="广告名称">
+    </el-table-column>
+    <el-table-column property="targetUrl" label="目标路径">
+    </el-table-column>
+    <el-table-column property="" :render-header="renderHeader" align="center">
+         <template scope="scope">
+                 <p size="small" @click="isShow(scope.$index,scope.row)" v-if="scope.row.totalClick =='--'">点击显示</p>
+                 <p v-if="scope.row.totalClick != '--'">{{scope.row.totalClick}}</p>
+         </template>
+    </el-table-column>
+    <el-table-column property="gmtCreate" label="创建时间">
+    </el-table-column>
+    <el-table-column property="onlineEnd" label="下线时间" >
+    </el-table-column>
+    <el-table-column label="操作" width="80" align="center">
+      <template scope="scope" >
+                  <el-button size="small" @click="handleToDetails(scope.row)" >查看</el-button>
+            </template>
+    </el-table-column>
+  </el-table>
+  <el-col :span="24" class="toolbar">
+    <el-pagination layout="total, sizes, prev, pager, next" @current-change="handleCurrentChange" @size-change="handleSizeChange" :page-size="advertisDown.pageSize" :page-sizes="pageSizes" :total="advertisDown.total" style="float:right;">
+    </el-pagination>
+  </el-col>
+     <form :action="formAction" method="post" id="myForm" target="_blank" style="display: none;" > 
+        <input type="text" v-model="name" name="adStatusParam" /> 
+        <input type="text" :value="filters.startDate" name="createStartTime" />
+        <input type="text" :value="filters.endDate" name="createEndTime" />
+        <input type="text" :value="filters.insideMerchantId" name="insideMerchantId" />
+        <input type="text" :value="search" name="keywords" />
+            <input type="submit" value="Submit" />
+    </form>
+</div>
+</template>
+<script>
+ import global from '../../assets/js/global'
+ import { clickLog} from "../../api/api";
+export default {
+  props: {
+    searchData: Array,
+    tableData:Array,
+    totalPage:Number,
+    
+  },
+  data() {
+    return {
+          startPickerOptions: this.beginDate(),
+          start:'',
+          end:"",
+          cmarketMerchantComment:"",
+          endPickerOptions: this.processDate(),
+          search: '', //关键词搜素
+          listLoading: false,
+          pageSizes: [10, 20, 30, 40],
+          advertisDown:{
+              currentPage:0,
+              pageSize: 10,
+              total: 0,
+              list: []
+          },
+           filters:{
+              insideMerchantId:"",
+              startDate:"",
+              endDate:"",
+          },
+          formAction: process.env.API_ROOT + '/engine-console/console/cmarketMerchantAd/cAdDOExportExcel.do',
+          name:"OFF",
+       
+    };
+  },
+  mounted(){
+    this.searMerchantAd()
+  },
+  computed: {
+      //  模糊查询
+       getAdvertisDown(){
+            let data = this.$store.getters.getAdvertisDown
+           this.advertisDown.currentPage = data.currentPage
+           debugger
+              this.advertisDown.pageSize = data.pageSize
+            let list = global.replaceCellInfo(data.list, '--')
+            for (let j = 0; j < list.length; j++) {
+              if (list[j].gmtCreate != '--' ) {
+                 list[j].gmtCreate = global.formatTime(list[j].gmtCreate)
+              }
+              if (list[j].onlineEnd != '--' ) {
+                   list[j].onlineEnd = global.formatTime(list[j].onlineEnd)
+              }
+            }
+             this.advertisDown.list = list
+            var search = this.search;
+          
+            this.advertisDown.total = data.total
+             return this.advertisDown.list
+           
+       },
+    },
+   
+   watch: {
+        addFormVisible (val) {
+            this.resetDateInfo()
+        },
+        editFormVisible (val) {
+            this.resetDateInfo()
+        },
+       
+    },
+  methods: {
+     renderHeader (createElement) {
+        return createElement(
+          'div',
+          {
+            'class': 'renderTableHead',
+            'style': 'line-height: 16px; padding-top: 15px;'
+          },
+          [
+            createElement('div', {
+              attrs: { type: 'text' }
+            }, ['统计']
+            ),
+            createElement('div', {
+              attrs: { type: 'text', style: 'color: #FF4949; font-size: 10px;' }
+            }, ['*指该广告当前的总点击数']
+            )
+          ]
+        )
+      },
+     
+       // 查看详情
+      handleToDetails (row) {
+        // this.$router.push('/adverManage/details/' + row.id)
+        this.$router.push({
+          path: '/adverDetails/details',
+          query: {
+           intellId: row.adId
+          }
+        });
+
+       },
+       resetDateInfo () {
+            this.start = this.end = ''
+        },
+        selectedOnline (start) {
+            this.start = start
+        },
+        selectedEnd (endDate) {
+            this.end = endDate
+
+        },
+        searMerchantAd(){
+          let userParams = {
+                keywords:this.search,
+                externalMerchantId:this.filters.insideMerchantId,
+                createStartTime: this.filters.startDate,
+                createEndTime: this.filters.endDate,
+                adStatusParam:"OFF ",
+                currentPage:this.advertisDown.currentPage,
+                pageSize:this.advertisDown.pageSize,  
+                callback: function(res) {
+                  console.log(res);
+                } 
+          }
+           this.$store.dispatch('getAdvertisDown', userParams)
+        },
+       beginDate () {
+            let vm = this
+            return {
+            disabledDate (time) {
+                if (vm.end) {
+                return new Date(vm.end).getTime() < time.getTime()
+                }
+            }
+            }
+        },
+         processDate () {
+            let vm = this
+            return {
+                disabledDate (time) {
+                    if (vm.start) {
+                        return new Date(vm.start).getTime() > time.getTime()
+                    }
+                }
+            }
+        },
+        //   点击分页
+         handleSizeChange(size) {
+            this.$store.commit('changeAdvertiseDown', {pageSize: size})
+             this.advertisDown.pageSize = size
+             this.searMerchantAd()
+          
+        },
+       
+        handleCurrentChange(val) {
+            this.$store.commit('changeAdvertiseDown', {currentPage: val})
+              this.advertisDown.currentPage = val
+             this.searMerchantAd()
+        },
+        isShow(index,row){
+          let parem = {
+                adId:row.adId,
+          }
+          clickLog(parem).then((data) => {
+              if (data.data.code == 200) {
+                row.totalClick =data.data.data
+              } else {
+                  this.$message({
+                      message: data.data.message,
+                      type: 'error'
+                  })
+              }
+          })
+        
+      },
+      handleExportExce(){
+          this.filters.startDate= Date.parse(this.filters.startDate)
+          this.filters.endDate = Date.parse(this.filters.endDate)
+          console.log(this.name)
+            let myForm = document.getElementById('myForm')
+          document.getElementById('myForm').submit();
+
+            
+      },
+   
+  }
+};
+</script>

@@ -1,0 +1,259 @@
+<template>
+  <div style="min-width: 950px; margin: 15px 0;">
+    <div v-show="$route.params.from == 1">
+      <el-tree
+        :data="data"
+        :props="defaultProps"
+        @node-click="handleNodeClick"
+        default-expand-all
+        highlight-current>
+      </el-tree>
+    </div>
+
+    <el-tabs v-model="activeName" type="card">
+      <el-tab-pane label="banner位详情" name="first">
+        <table v-for="item in tableData" class="table-details" width="100%">
+          <tr>
+            <td>banner位状态：</td>
+            <td>{{item.status}}</td>
+          </tr>
+          <tr>
+            <td>banner位图片：</td>
+            <td>
+              <img :src="item.picURL" alt="img">
+              <span class="tips">*建议尺寸：750*320px,jpg格式</span>
+            </td>
+          </tr>
+          <tr>
+            <td>广告名称：</td>
+            <td>{{item.adName}}</td>
+          </tr>
+          <tr>
+            <td>上线时间：</td>
+            <td width="30%">{{item.onlineRealStart}}</td>
+            <td>下线时间：</td>
+            <td>{{item.onlineTaskEnd}}</td>
+          </tr>
+          <tr>
+            <td>banner位备注：</td>
+            <td width="30%">{{item.comment}}</td>
+            <td>目标路径：</td>
+            <td>
+              <a :href="item.targetURL" target="_blank">{{item.targetURL}}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="display: inline-block; width: 60%; text-align: center;">
+              <el-button type="success">启用</el-button>
+              <el-button type="primary">编辑</el-button>
+            </td>
+          </tr>
+        </table>
+        <div class="clearfix"></div>
+      </el-tab-pane>
+      <el-tab-pane label="banner位统计" name="second">
+        <el-table
+          :data="tableData"
+          style="width: 100%">
+          <el-table-column
+            prop="adName"
+            label="广告名称">
+          </el-table-column>
+          <el-table-column
+            prop="onlineRealStart"
+            label="上线时间">
+          </el-table-column>
+          <el-table-column
+            prop="onlineTaskEnd"
+            label="设定的下线时间">
+          </el-table-column>
+          <el-table-column
+            prop="onlineRealStart"
+            label="实际下线时间">
+          </el-table-column>
+        </el-table>
+        <div style="margin: 15px 0;">
+          <el-form :inline="true" :model="filters">
+            <el-form-item>
+              按时间段查询：
+              <el-date-picker
+                v-model="filters.times"
+                type="datetimerange"
+                range-separator=" 至 "
+                placeholder="请选择开始及结束日期">
+              </el-date-picker>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" :click="getInTimeCount">查询</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div id="countTable">
+          <el-table
+            :data="inTimeData">
+            <el-table-column
+              prop="totalClickNum"
+              align="center"
+              label="该时间段内点击数量">
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        data: [],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        tableData: [],
+        filters: {
+          times: ''
+        },
+        inTimeData: []
+      }
+    },
+    mounted () {
+      this.getDetails()
+      this.getList()
+      this.getInTimeCount()
+    },
+    methods: {
+      handleNodeClick (data) {
+        console.log(data)
+      },
+      getList () {
+        let vm = this
+        let onlineVal = {
+          tableParams: '',
+          callback: function (res) {
+            if (res.data.code == 200 && res.data.message.toLowerCase() == 'ok') {
+              let ul = {
+                label: '现金超市H5页面',
+                children: []
+              }
+              let list = res.data.data.bannerPositionList
+              let parame = {}
+              for (let j = 0; j < list.length; j++) {
+                parame = {
+                  label: list[j].bannerPositionName,
+                  id: list[j].id
+                }
+                ul.children.push(parame)
+              }
+              vm.data.push(ul)
+            } else {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          }
+        }
+        vm.$store.dispatch('getOnlineTable', onlineVal)
+      },
+      getDetails (id) {
+        let resData = {
+          id: 1,
+          orderNo: 1,
+          bannerPositionName: '1号banner位',
+          status: '启用中',
+          picURL: 'https://gss0.bdstatic.com/94o3dSag_xI4khGkpoWK1HF6hhy/baike/c0%3Dbaike92%2C5%2C5%2C92%2C30/sign=ca08015fdc3f8794c7f2407cb3726591/3c6d55fbb2fb4316356f989d28a4462308f7d3e1.jpg',
+          comment: 'banner位描述',
+          adName: '广告名称1',
+          targetURL: 'http://www.baidu.com',
+          onlineRealStart: '2017-10-25 05:41:08',
+          onlineTaskEnd: '2017-10-30 05:41:08'
+        }
+        this.tableData[0] = resData
+        this.getCount()
+      },
+      getCount (id) {
+        let resData = {
+          totalClickNum: 2323,
+          currentMonthClickNum: 323
+        }
+        this.tableData.totalClickNum = resData.totalClickNum
+        this.tableData.currentMonthClickNum = resData.currentMonthClickNum
+      },
+      getInTimeCount (id, startTime, endTime) {
+        let resData = {
+          totalClickNum: 2323,
+          currentMonthClickNum: 323
+        }
+        this.inTimeData[0] = resData
+      }
+    }
+  }
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-tree {
+    float: left;
+    min-width: 200px;
+    width: 25%;
+    border: 0;
+  }
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+      clear: both;
+    }
+  }
+  .el-tabs {
+    float: left;
+    min-width: 500px;
+    width: 75%;
+  }
+
+  .table-details tr {
+    display: block;
+    border-bottom: 1px solid #bfcbd9;
+  }
+
+  .table-details tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table-details td {
+    display: inline-block;
+    padding: 20px 0;
+  }
+
+  .table-details td:first-child {
+    width: 130px;
+    vertical-align: top;
+    text-align: right;
+  }
+
+  .table-details td > .tips {
+    color: #8492A6;
+    font-size: 12px;
+  }
+
+  .table-details td .el-button {
+    width: 120px;
+
+  }
+  .table-details td .el-button+.el-button {
+    margin-left: 30px;
+  }
+
+  #countTable > .el-table {
+    width: 180px;
+  }
+
+</style>

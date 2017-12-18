@@ -1,0 +1,308 @@
+<template>
+  <div>
+    <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="true">
+      <el-form :model="editForm" label-width="80px" :rules="editFormRules" ref="editForm">
+        <el-form-item label="关联广告" prop="adId">
+          <el-select v-model="editForm.adId" filterable placeholder="请选择" :disabled="true">
+            <!-- <el-option v-for="item in neameIds" :key="item.id" :label="item.comment" :value="item.id"></el-option> -->
+          </el-select>
+        </el-form-item>
+        <el-form-item label="权重说明" prop="weight">
+          <el-input type="textarea" v-model="editForm.weight"></el-input>
+        </el-form-item>
+        <el-form-item label="小图像" prop="img2">
+          <el-upload :headers="dataObjs" class="avatar-uploader" :action="action" :show-file-list="false"
+                     :on-success="handleAvatarSuccessImg">
+            <img v-if="imageUrl" :src="imageUrl" class="avatar">
+            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+          </el-upload>
+          <label>(120*120px,JPG格式) </label>
+        </el-form-item>
+        <el-form-item label="上线时间" prop="onlineStart" required>
+          <el-radio v-model="radio1" label="0" style="width:45%">立即上线</el-radio>
+          <el-radio v-model="radio1" label="1" style="width:45%">设定时间</el-radio>
+          <el-form-item label="下线时间" prop="onlineEnd" v-if="radio1 == 0" required>
+            <el-date-picker v-model="editForm.onlineEnd" type="datetime" format="yyyy-MM-dd 'HH:mm:ss"
+                            value-format="yyyy-MM-dd 'HH:mm:ss" placeholder="选择下线时间">
+            </el-date-picker>
+          </el-form-item>
+        </el-form-item>
+        <el-form-item label="上下线时间" prop="onlineTime" v-if="radio1 != 0" required>
+          <el-date-picker
+            v-model="editForm.onlineTime"
+            type="datetimerange"
+            range-separator=" 至 "
+            placeholder="请选择上线时间及下线时间" required>
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="广告名称" prop="adName">
+          <el-input v-model="editForm.adName" type="text" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="标签" prop="tags">
+          <el-input v-model="editForm.tags" type="text" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="目标路径" prop="targetUrl">
+          <el-input v-model="editForm.targetUrl" auto-complete="off" type="text" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="申请条件" prop="details">
+          <el-input v-model="editForm.details" auto-complete="off" type="text" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="系统标签" prop="details">
+          <el-input v-model="editForm.details" auto-complete="off" type="text" :disabled="true"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native="editFormVisible = false">取消</el-button>
+        <el-button type="primary" @click.native="editSubmit" :loading="editLoading">提交</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  import { updateAdPlanMark } from '../../api/api'
+  import bus from '../../assets/js/eventBus'
+
+  export default {
+    data () {
+      return {
+        search: '',
+        // 编辑界面是否显示
+        editFormVisible: false,
+        editLoading: false,
+        // 文本框设置5行
+        dataObjs: {authorization: localStorage.getItem('userId')},
+        // 编辑界面数据
+        editForm: {},
+        editFormRules: {
+          adId: [
+            {type: 'number', required: true, message: '请选择关联广告', trigger: 'blur'}
+          ],
+
+          tags: [
+            {required: true, message: '请输入标签', trigger: 'blur'}
+          ],
+          adName: [
+            {required: true, message: '请输入广告名称', trigger: 'change'}
+          ],
+          targetUrl: [
+            {required: true, message: '请输入目标路径', trigger: 'blur'}
+          ],
+          details: [
+            {required: true, message: '请输入申请条件', trigger: 'blur'}
+          ],
+          img2: [
+            {required: true, message: '请上传小图片', trigger: 'blur'}
+          ],
+          onlineEnd: [
+            {type: 'date', required: true, message: '请选择下线时间', trigger: 'change'}
+          ]
+        },
+
+        headers: {authorization: localStorage.getItem('userId')},
+        uploadParams: {cmarketMerchantId: ''},
+        action: process.env.API_ROOT + '/engine-console/console/uploadFile/uploadPicture.do',
+        previewPic: '',
+        radio1: '0',
+        imageUrl: ''
+      }
+    },
+    methods: {
+      editSubmit () {
+        let vm = this
+        vm.$refs.editForm.validate((valid) => {
+          if (this.imageUrl == '') {
+            vm.$message({
+              message: '请先上传小图像',
+              type: 'error'
+            })
+            return
+          }
+          if (valid) {
+            vm.$confirm('确认提交吗？', '提示', {}).then(() => {
+              vm.editLoading = true
+              let params = {
+
+                adId: vm.editForm.adId,
+                tags: vm.editForm.tags,
+                targetUrl: vm.editForm.targetUrl,
+                adName: vm.editForm.adName,
+                details: vm.editForm.adName,
+                sysTags: vm.editForm.sysTags,
+                img2: vm.img2,
+                onlineStart: this.radio1 == 0 ? '' : Date.parse(vm.editForm.onlineTime[0]),
+                onlineEnd: this.radio1 == 0 ? Date.parse(vm.editForm.onlineEnd) : Date.parse(vm.editForm.onlineTime[1]),
+                adStatusParam: this.radio1 == 0 ? 'ON' : 'W'
+              }
+              updateAdPlanMark(params).then(res => {
+                vm.editFormVisible = vm.editLoading = false
+                if (res.data.code === 200) {
+                  this.$emit('childMethod')
+                } else {
+                  vm.$message({
+                    message: res.data.message,
+                    type: 'error'
+                  })
+                }
+              })
+            })
+          } else {
+            console.log('error submit!!')
+            return false
+          }
+        })
+      },
+      handleAvatarSuccessImg (res, file) {
+        if (res.code == 200) {
+          this.imageUrl = URL.createObjectURL(file.raw)
+          this.img2 = res.data
+        } else {
+          this.$confirm(res.message, '提示')
+        }
+      }
+    },
+    computed: {},
+    mounted () {
+      var vm = this
+      bus.$on('handleEditBox', function (message) {
+        vm.editFormVisible = message.editFormVisible
+
+        vm.editForm= message.detail
+          console.log(vm.editForm)
+         console.log(vm.editForm.onlineEnd)
+        vm.imageUrl = message.detail.img2 ? `${process.env.IMG_SERVER}` + message.detail.img2 :"";
+         vm.editForm.img2 = `${process.env.IMG_SERVER}`
+        // vm.editForm.onlineEnd =""
+        console.log(vm.editForm.onlineEnd)
+
+
+
+      })
+    },
+    watch: {
+      editFormVisible (val) {
+        let vm = this
+        if (!val) {
+          vm.editForm = Object.assign({}, {
+            id: '',
+            adId: '',
+            picURL: '',
+            comment: '',
+            checked: true,
+            search: ''
+          })
+        }
+      },
+      radio1 (val) {
+        console.log(val)
+      }
+    }
+  }
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 120px !important;
+    height: 120px !important;
+    line-height: 120px !important;
+    text-align: center;
+    border: 1px dashed #c0ccda;
+    background-color: #fbfdff;
+  }
+
+  .pic-container {
+    float: left;
+    width: 232px;
+  }
+<<<<<<< .mine
+
+||||||| .r236
+// .v-modal {
+//     position: fixed;
+//     left: 0;
+//     top: 0;
+//     width: 100%;
+//     height: 100%;
+//     opacity: .5;
+//     background: #fff !important;
+// }
+.v-modal {
+    background: transparent !important;
+}
+=======
+
+  /
+  /
+  .v-modal {
+  / / position: fixed;
+  / / left: 0;
+  / / top: 0;
+  / / width: 100 %;
+  / / height: 100 %;
+  / / opacity: .5;
+  / / background: #fff !important;
+  / /
+  }
+
+  .v-modal {
+    background: transparent !important;
+  }
+
+>>>>>>> .r237
+  .comment-container {
+    float: left;
+    width: 50%;
+  }
+
+  .search {
+    float: left;
+    width: 40%;
+    min-width: 160px;
+    margin-left: 15px;
+  }
+
+  .avatar {
+    width: 120px;
+    height: 120px;
+  }
+
+  .clearfix {
+    *zoom: 1;
+
+  &
+  :before,
+
+  &
+  :after {
+    display: table;
+    content: "";
+    line-height: 0;
+  }
+
+  &
+  :after {
+    clear: both;
+  }
+
+  }
+  .avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 178px;
+    height: 178px;
+    line-height: 178px;
+    text-align: center;
+  }
+
+  .avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 120px !important;
+    height: 120px !important;
+    line-height: 120px !important;
+    text-align: center;
+    border: 1px dashed #c0ccda;
+    background-color: #fbfdff;
+  }
+</style>

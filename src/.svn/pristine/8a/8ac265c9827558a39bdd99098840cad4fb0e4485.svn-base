@@ -1,0 +1,414 @@
+<template>
+  <div style="min-width: 950px; margin: 15px 0;">
+    <div v-show="params.from == 1">
+      <el-tree
+        :data="data"
+        :props="defaultProps"
+        default-expand-all
+        @node-click="handleNodeClick"
+        node-key="id"
+        highlight-current
+        ref="myTree">
+      </el-tree>
+    </div>
+    <el-tabs v-model="activeName" type="card">
+      <el-tab-pane label="banner位详情" name="first">
+        <table v-for="item in tableData" class="table-details" width="100%">
+          <tr>
+            <td>banner位状态：</td>
+            <td v-text="item.status == 1 ? '启用中' : '已禁用'"></td>
+          </tr>
+          <tr>
+            <td>banner位图片：</td>
+            <td width="150">
+              <img :src="item.picURL" alt="" style="width: 100%;">
+              <span class="tips">*建议尺寸：750*320px,jpg格式</span>
+            </td>
+          </tr>
+          <tr>
+            <td>广告名称：</td>
+            <td v-text="item.adName"></td>
+          </tr>
+          <tr>
+            <td>实际上线时间：</td>
+            <td width="30%" v-text="item.onlineRealStart"></td>
+            <td>设定下线时间：</td>
+            <td v-text="item.onlineTaskEnd"></td>
+          </tr>
+          <tr>
+            <td v-if="item.comment != '--' && item.comment != undefined">banner位备注：</td>
+            <td v-if="item.comment != '--' && item.comment != undefined" width="30%" v-text="item.comment"></td>
+            <td>目标路径：</td>
+            <td>
+              <a v-if="item.targetURL != '--'" :href="item.targetURL" target="_blank" v-text="item.targetURL"></a>
+              <span v-else v-text="item.targetURL"></span>
+            </td>
+          </tr>
+          <tr>
+            <td style="display: inline-block; width: 60%; text-align: center;">
+              <el-button v-if="isShowCount" type="danger" @click="handleStatus">禁用</el-button>
+              <el-button type="primary" @click="handleEdit" v-if="modifyShow">编辑</el-button>
+            </td>
+          </tr>
+        </table>
+        <div class="clearfix"></div>
+      </el-tab-pane>
+      <el-tab-pane label="banner位统计" name="second" v-if="isShowCount || params.from == 2">
+        <el-table
+          :data="tableData"
+          style="width: 100%">
+          <el-table-column
+            prop="adName"
+            label="广告名称"
+            width="120">
+          </el-table-column>
+          <el-table-column
+            prop="onlineRealStart"
+            label="上线时间">
+          </el-table-column>
+          <el-table-column
+            prop="onlineTaskEnd"
+            label="设定的下线时间">
+          </el-table-column>
+          <el-table-column
+            prop="onlineRealStart"
+            label="实际下线时间">
+          </el-table-column>
+          <el-table-column
+            prop="totalClickNum"
+            label="总点击数量">
+          </el-table-column>
+          <el-table-column
+            prop="currentMonthClickNum"
+            label="当月（自然月）点击数"
+            width="180">
+          </el-table-column>
+        </el-table>
+        <div style="margin: 15px 0;">
+          <el-form :inline="true" :model="filters">
+            <el-form-item>
+              按时间段查询：
+              <el-date-picker
+                v-model="filters.times"
+                type="daterange"
+                range-separator=" 至 "
+                placeholder="请选择开始及结束日期">
+              </el-date-picker>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="getInTimeCount">查询</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div id="countTable">
+          <el-table
+            :data="inTimeData">
+            <el-table-column
+              prop="totalClickNum"
+              align="center"
+              label="该时间段内点击数量">
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+    <edit :childToParentRefresh="showChildToParentMsg"></edit>
+  </div>
+</template>
+
+<script>
+  import { getOnlineDetail, getOutlineDetail, onlineCount, updateCmarketBannerTask, forbidBanner } from '../api/api'
+  import edit from '../components/bannerManage/edit.vue'
+  import bus from '../assets/js/eventBus'
+  import global from '../assets/js/global'
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        data: [],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        tableData: [],
+        filters: {
+          times: ''
+        },
+        inTimeData: [],
+        params: {
+          from: this.$route.params.from,
+          id: this.$route.params.id
+        },
+        isShowCount: false,
+        editFormVisible: false,
+        modifyShow: false
+      }
+    },
+    components: { edit },
+    mounted () {
+      let vm = this
+      bus.$on('noticeRefresh', function (boolean) {
+        if (boolean) {
+          vm.getDetails(vm.params.from, vm.params.id)
+          vm.getList()
+        }
+      })
+      vm.getDetails(vm.params.from, vm.params.id)
+      vm.getList()
+      vm.modifyShow = global.judgePermissionName('banner:modify', vm.$store.getters.getPermissionName) && vm.params.from == 1
+    },
+    methods: {
+      // tree控件，自己写的设置默认选中高亮
+      setDefaultTreeSelected () {
+        let vm = this
+        let objs = document.getElementsByClassName('el-tree-node__label')
+        if (objs.length == 0) {
+          setTimeout(function () {
+            vm.setDefaultTreeSelected()
+          }, 100)
+        } else {
+          for (let i = 0; i < objs.length; i++) {
+            for (let j = 0; j < vm.data[0].children.length; j++) {
+              if (vm.data[0].children[j].id == vm.params.id) {
+                if (objs[i].innerText == vm.data[0].children[j].label) {
+                  objs[i].parentNode.parentNode.classList.add('is-current')
+                  break
+                }
+              }
+            }
+          }
+        }
+      },
+      handleNodeClick (data) {
+        let vm = this
+        // 每次点击都将自己手动添加的默认选中状态去除
+        document.getElementsByClassName('is-current')[0].classList.remove('is-current')
+        if (data.$treeNodeId != 1 && data.id != Number(vm.$route.params.id)) {
+          vm.$router.push({path: '/bannerManage/details/' + vm.params.from + '/' + data.id})
+          vm.params.id = data.id
+          vm.getDetails(vm.$route.params.from, data.id)
+        }
+      },
+      getList () {
+        let vm = this
+        let onlineVal = {
+          tableParams: '',
+          callback: function (res) {
+            if (res.data.code == 200 && res.data.message.toLowerCase() == 'ok') {
+              let ul = {
+                label: '现金超市H5页面',
+                children: []
+              }
+              let list = res.data.data.bannerPositionList
+              let parame = {}
+              for (let j = 0; j < list.length; j++) {
+                parame = {
+                  label: list[j].bannerPositionName,
+                  id: list[j].id
+                }
+                ul.children.push(parame)
+              }
+              vm.data = []
+              vm.data.push(ul)
+              vm.setDefaultTreeSelected()
+            } else {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          }
+        }
+        vm.$store.dispatch('getOnlineTable', onlineVal)
+      },
+      getDetails (fromTo, id) {
+        let vm = this
+        if (Number(fromTo) == 1) {
+          getOnlineDetail({id: id}).then(data => {
+            if (data.data.code === 200) {
+              let details = data.data.data
+              details = global.replaceCellInfo([details], '--')[0]
+              details.picURL = details.picURL != '--' ? process.env.IMG_SERVER + details.picURL : '--'
+              details.onlineRealStart = details.onlineRealStart != '--' ? global.formatTime(details.onlineRealStart) : '--'
+              details.onlineTaskEnd = details.onlineTaskEnd != '--' ? global.formatTime(details.onlineTaskEnd) : '--'
+              vm.tableData = []
+              vm.tableData.push(details)
+              vm.isShowCount = Number(details.status) == 1
+              if (vm.isShowCount) {
+                vm.getCount(id)
+              }
+            }
+          })
+        } else {
+          getOutlineDetail({id: id}).then(data => {
+            if (data.data.code === 200) {
+              let details = data.data.data
+              details.picURL = process.env.IMG_SERVER + details.picURL
+              details.onlineRealStart = global.formatTime(details.onlineRealStart)
+              details.onlineTaskEnd = global.formatTime(details.onlineTaskEnd)
+              details.onlineRealEnd = global.formatTime(details.onlineRealEnd)
+              details = global.replaceCellInfo([details], '--')[0]
+              vm.tableData = []
+              vm.tableData.push(details)
+//              vm.getCount()
+            }
+          })
+        }
+      },
+      getCount (id) {
+        let vm = this
+        let params = {
+          id: id
+        }
+        onlineCount(params).then(res => {
+          if (res.data.code === 200) {
+            vm.tableData[0].totalClickNum = res.data.data.totalClickNum
+            vm.tableData[0].currentMonthClickNum = res.data.data.currentMonthClickNum
+          } else {
+            vm.$message({
+              message: res.data.message,
+              type: 'error'
+            })
+          }
+        })
+      },
+      getInTimeCount () {
+        let vm = this
+        if (vm.filters.times == '') return false
+        let params = {
+          id: vm.params.id
+        }
+        if (vm.filters.times != '') {
+          params.startTime = vm.filters.times[0].getTime()
+          params.endTime = vm.filters.times[1].getTime()
+        }
+        if (Number(vm.params.from) == 1) {
+          onlineCount(params).then(res => {
+            if (res.data.code === 200) {
+              vm.inTimeData = []
+              vm.inTimeData.push({totalClickNum: res.data.data.totalClickNum})
+            } else {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          })
+        } else {
+          updateCmarketBannerTask(params).then(res => {
+            if (res.data.code === 200) {
+              vm.inTimeData = []
+              vm.inTimeData.push({totalClickNum: res.data.data.totalClickNum})
+            } else {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          })
+        }
+      },
+      handleStatus () {
+        let vm = this
+        // 状态是1的时候
+        if (vm.isShowCount) {
+          let param = {
+            id: vm.tableData[0].id
+          }
+          vm.$confirm('确定要立即启用该banner位吗？', '提示', {}).then(() => {
+            forbidBanner(param).then(res => {
+              if (res.data.code === 200) {
+                vm.$message({
+                  message: '禁用成功',
+                  type: 'success'
+                })
+              } else {
+                vm.$message({
+                  message: res.data.message,
+                  type: 'error'
+                })
+              }
+            })
+          }, cancel => {
+            console.log(cancel)
+          })
+        }
+      },
+      handleEdit () {
+        let vm = this
+        vm.editFormVisible = true
+        bus.$emit('handleEditBox', {
+          editFormVisible: vm.editFormVisible,
+          id: vm.$route.params.id
+        })
+      },
+      showChildToParentMsg: function (data) {
+        alert('父组件显示信息：' + data)
+      }
+    }
+  }
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-tree {
+    float: left;
+    min-width: 200px;
+    width: 25%;
+    border: 0;
+  }
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+      clear: both;
+    }
+  }
+  .el-tabs {
+    float: left;
+    min-width: 500px;
+    width: 75%;
+  }
+
+  .table-details tr {
+    display: block;
+    border-bottom: 1px solid #bfcbd9;
+  }
+
+  .table-details tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table-details td {
+    display: inline-block;
+    padding: 20px 0;
+  }
+
+  .table-details td:first-child {
+    width: 130px;
+    vertical-align: top;
+    text-align: right;
+  }
+
+  .table-details td > .tips {
+    color: #8492A6;
+    font-size: 12px;
+  }
+
+  .table-details td .el-button {
+    width: 120px;
+
+  }
+  .table-details td .el-button+.el-button {
+    margin-left: 30px;
+  }
+
+  #countTable > .el-table {
+    width: 180px;
+  }
+
+</style>

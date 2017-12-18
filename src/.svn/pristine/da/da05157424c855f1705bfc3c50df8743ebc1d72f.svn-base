@@ -1,0 +1,401 @@
+<template>
+  <div>
+    <!-- 标题 -->
+    <el-breadcrumb separator-class="el-icon-arrow-right">
+        <el-breadcrumb-item :to="{ path: '/advers' }">全部广告</el-breadcrumb-item>
+        <el-breadcrumb-item>广告详情</el-breadcrumb-item>
+    </el-breadcrumb>
+     <!-- 内容 -->
+         <table class="table-details" width="100%">
+          <tr>
+            <td>广告名称：</td>
+            <td>{{tableData.adName}}</td>
+            <td>广告商外部ID：</td>
+            <td>{{tableData.externalMerchantId}}</td>
+          </tr>
+          <tr>
+            <td> 申请条件：</td>
+            <td>{{tableData.details}}</td>
+             <td> 目标路径：</td>
+            <td>{{tableData.targetUrl}}</td>
+          </tr>
+          <tr>
+            <td>标签：</td>
+            <td>{{tableData.tags}}</td>
+             <td>系统标签：</td>
+            <td>{{tableData.sysTags}}</td>
+          </tr>
+           <tr>
+              <td>创建时间：</td>
+            <td>{{tableData.createStartTime}}</td>
+             <td >下线时间：</td>
+            <td>{{tableData.onlineEnd}}</td>
+            </tr>
+          <tr>
+             <td>小图像：</td>
+             <td><img :src="tableData.img1" ></td>
+             <td>banner位图像：</td>
+             <td><img :src="tableData.img2" ></td>
+          </tr>
+        </table>
+        <div class="clearfix"></div>
+        <el-row :gutter="20">
+              <el-col :span="3"><div class="grid-content">总统计：</div></el-col>
+              <el-col :span="21">
+                    <!-- 总统计开始 -->
+                    <el-table :data="allData" style="width: 100%">
+                      <el-table-column label="广告名称" property="adName">
+                      </el-table-column>
+                      <el-table-column property="totalClick" label="总点击数量"> 
+                        </el-table-column>
+                      <el-table-column property="thisMothClick" label="当月(自然月)点击数">
+                      </el-table-column>
+                    </el-table>
+
+                    <div style="margin: 15px 0;">
+                      <el-form :inline="true" :model="filters">
+                        <el-form-item>
+                          按时间段查询点击量：
+                          <el-date-picker v-model="filters.startTime" type="date" placeholder="开始日期时间" format="yyyy-MM-dd"
+                            :picker-options="startPickerOptions" @focus="selectedOnline(filters.startTime,filters.endTime)" >
+                          </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                          <el-date-picker v-model="filters.endTime" type="date" placeholder="结束日期时间" format="yyyy-MM-dd"
+                            :picker-options="endPickerOptions" @focus="selectedEnd(filters.endTime,filters.startTime)">
+                          </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                           <el-button type="primary" @click="getInTimeCount(filters.startTime,filters.endTime)">查询</el-button>
+                        </el-form-item>
+                      </el-form>
+                    </div>
+                    <div id="countTable">
+                      <el-table :data="timeData"> 
+                        <el-table-column prop="totalClickNum" align="center" label="该时间段内点击数量">
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                    <!-- 总统计结束 -->
+              </el-col>
+        </el-row>
+         <el-row :gutter="20">
+              <el-col :span="3"><div class="grid-content">超市列表总统计：</div></el-col>
+              <el-col :span="21">
+                    <!-- 超市列表总统计开始 -->
+                    <el-table :data="bannerClick" style="width: 100%">
+                      <el-table-column label="广告名称" property="adName">
+                      </el-table-column>
+                      <el-table-column property="bannerTotalClick" label="总点击数量"> 
+                        </el-table-column>
+                      <el-table-column property="bannerThisMothClick" label="当月(自然月)点击数">
+                      </el-table-column>
+                    </el-table>
+
+                    <div style="margin: 15px 0;">
+                      <el-form :inline="true" :model="listMark">
+                        <el-form-item>
+                          按时间段查询点击量：
+                          <el-date-picker v-model="listMark.startTime" type="date" placeholder="开始日期时间" format="yyyy-MM-dd"
+                            :picker-options="startPickerOptions" @focus="selectedOnline(listMark.startTime,listMark.endTime)" >
+                          </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                          <el-date-picker v-model="listMark.endTime" type="date" placeholder="结束日期时间" format="yyyy-MM-dd"
+                            :picker-options="endPickerOptions" @focus="selectedEnd(listMark.endTime,listMark.startTime)">
+                          </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                          <!-- <el-button type="primary" v-on:click="getInTimeCount">查询</el-button> -->
+                           <el-button type="primary" @click="getInTimeCount(listMark.startTime,listMark.endTime,2)">查询</el-button>
+                        </el-form-item>
+                      </el-form>
+                    </div>
+                    <div id="countTable">
+                      <el-table :data="listData">
+                        <el-table-column prop="totalClickNum" align="center" label="该时间段内点击数量">
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                    <!-- 总统计结束 -->
+              </el-col>
+        </el-row>
+         <el-row :gutter="20">
+              <el-col :span="3"><div class="grid-content">banner位总统计：</div></el-col>
+              <el-col :span="21">
+                    <!-- 总统计开始 -->
+                   <el-table :data="listClick" style="width: 100%">
+                      <el-table-column label="广告名称" property="adName">
+                      </el-table-column>
+                      <el-table-column property="listTotalClick" label="总点击数量"> 
+                        </el-table-column>
+                      <el-table-column property="listThisMothClick" label="当月(自然月)点击数">
+                      </el-table-column>
+                    </el-table>
+                    <div style="margin: 15px 0;">
+                      <el-form :inline="true" :model="statistical">
+                        <el-form-item>
+                          按时间段查询点击量：
+                          <el-date-picker v-model="statistical.startTime" type="date" placeholder="开始日期时间" format="yyyy-MM-dd"
+                            :picker-options="startPickerOptions" @focus="selectedOnline(statistical.startTime,statistical.endTime)" >
+                          </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                          <el-date-picker v-model="statistical.endTime" type="date" placeholder="结束日期时间" format="yyyy-MM-dd"
+                            :picker-options="endPickerOptions" @focus="selectedEnd(statistical.endTime,statistical.startTime)">
+                          </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                           <el-button type="primary" @click="getInTimeCount(statistical.startTime,statistical.endTime,1)">查询</el-button>
+                        </el-form-item>
+                      </el-form>
+                    </div>
+                    <div id="countTable">
+                      <el-table :data="banData">
+                        <el-table-column prop="totalClickNum" align="center" label="该时间段内点击数量">
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                    <!-- 总统计结束 -->
+              </el-col>
+        </el-row>
+        
+  </div>
+</template>
+
+<script>
+  import { merchantAdDtai,clickLog,root } from '../../api/api'
+  export default {
+    data () {
+      return {
+        tableData: {},
+      
+         filters: {
+          startTime: '',
+          endTime: ''
+        },
+         listMark: {
+          startTime: '',
+          endTime: ''
+        },
+         statistical: {
+          startTime: '',
+          endTime: ''
+        },
+         startPickerOptions: this.beginDate(),
+         endPickerOptions: this.processDate(),
+         start: '',
+          end: '',
+         timeData :[{
+          totalClickNum: 2323,
+        }],
+         listData :[{
+          totalClickNum: 2323,
+        }],
+         banData :[{
+          totalClickNum: 2323,
+        }],
+       
+         allData:[],
+         bannerClick:[],
+         listClick:[]
+      }
+    },
+    mounted () {
+       let intellId = this.$route.query.intellId
+       let userParams = {
+            adStatus: '',
+            createStartTime: '',
+            createEndTime: ''
+        } 
+       this.merchantDetail()
+        // 总统计
+       this.getInTimeCount(this.filters.startTime,this.filters.endTime)
+      //  超市列表统计
+       this.getInTimeCount(this.listMark.startTime,this.listMark.endTime,2)
+      // banner位统计
+       this.getInTimeCount( this.statistical.startTime,this.statistical.endTime,1)
+    },
+    methods: {
+       
+         merchantDetail(userParams) {
+            let vm = this
+            let adId={
+              adId:vm.$route.query.intellId
+            }
+            merchantAdDtai(adId).then(data => {
+                if (data.data.code === 200) {
+                    vm.tableData = data.data.data.dtail
+                   this.allData[0] =  data.data.data.totalClick
+                     this.allData[0].adName =  data.data.data.dtail.adName
+
+                     vm.bannerClick[0] = data.data.data.bannerClick
+                      vm.bannerClick[0].adName =  data.data.data.dtail.adName
+                    
+                    vm.listClick[0] =  data.data.data.listClick
+                     vm.listClick[0].adName =  data.data.data.dtail.adName
+
+                      vm.tableData.img1 = `${process.env.IMG_SERVER}` + vm.tableData.img1;
+                      vm.tableData.img2 = `${process.env.IMG_SERVER}` + vm.tableData.img2;
+                }
+            })
+        },
+        selectedOnline (start,end) {
+            this.start = start
+            this.end = end
+        },
+        selectedEnd (endDate,startDate) {
+            this.end = endDate
+            this.start = startDate
+        },
+        processDate () {
+            let vm = this
+            return {
+                disabledDate (time) {
+                    if (vm.start) {
+                        return new Date(vm.start).getTime() > time.getTime()
+                    }
+                }
+            }
+        },
+        beginDate () {
+            let vm = this
+            return {
+                disabledDate (time) {
+                    if (vm.end) {
+                    return new Date(vm.end).getTime() < time.getTime()
+                    }
+                }
+            }
+        },
+        getInTimeCount( start,end,type){
+            let parem = {
+               adId:this.$route.query.intellId,
+               clickStartTime:Date.parse(start),
+               clickEndtTime:Date.parse(end),
+               positionType:type
+             }
+            clickLog(parem).then((data) => {
+                if (data.data.code == 200) {
+                  // row.totalClick =data.data.data
+                  console.log(data.data.data)
+                   switch (type) {
+                        case 1:
+                            this.banData[0].totalClickNum = data.data.data
+                            break;
+                        case 2:
+                            this.listData[0].totalClickNum = data.data.data
+                            break;
+                        default:
+                          this.timeData[0].totalClickNum = data.data.data
+                          break;
+                    }
+                } else {
+                    this.$message({
+                        message: data.data.message,
+                        type: 'error'
+                    })
+                }
+            })
+        }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-breadcrumb[data-v-65dee043]{
+    margin-bottom: 30px;
+  }
+  .el-breadcrumb__item__inner{
+    font-size: 20px;
+    color: #20a0ff;
+  }
+ .el-breadcrumb__item .el-breadcrumb__item__inner,.el-breadcrumb__item .el-breadcrumb__item__inner a{
+    color: #20a0ff !important;
+  }
+  .el-breadcrumb {
+    font-size: 24px;
+    line-height: 1;
+}
+.el-breadcrumb__item__inner, .el-breadcrumb__item__inner a{
+   color: #20a0ff !important;
+}
+img{
+  width: 120px;
+}
+ .el-row {
+    margin-bottom: 35px;
+    padding-top: 15px;
+    border-top: 2px solid #dfe6ec;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .grid-content{
+    text-align: right;
+  }
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+      clear: both;
+    }
+  }
+
+
+  .table-details tr {
+    display: block;
+    border-bottom: 1px solid #bfcbd9;
+  }
+
+  .table-details tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table-details td {
+    display: inline-block;
+    padding: 10px 0;
+  }
+
+  .table-details td:first-child {
+    width: 130px;
+    vertical-align: top;
+    text-align: right;
+  }
+  .table-details td:nth-of-type(2) {
+    width: 25%;
+    vertical-align: top;
+    text-align:left; 
+  }
+  .table-details td:nth-of-type(4) {
+     img{
+       width: 200px;
+       height: 120px;
+     }
+  }
+
+
+  .table-details td > .tips {
+    color: #8492A6;
+    font-size: 12px;
+  }
+
+  .table-details td .el-button {
+    width: 120px;
+
+  }
+  .table-details td .el-button+.el-button {
+    margin-left: 30px;
+  }
+
+  #countTable > .el-table {
+    width: 180px;
+  }
+
+</style>

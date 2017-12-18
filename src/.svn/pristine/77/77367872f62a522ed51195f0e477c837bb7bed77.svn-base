@@ -1,0 +1,130 @@
+<template>
+  <div style="min-width: 950px;">
+    <el-tree
+      :data="data"
+      :props="defaultProps"
+      @node-click="handleNodeClick"
+      default-expand-all
+      highlight-current>
+    </el-tree>
+    <table class="table-details">
+      <tr>
+        <td>banner位状态：{{tableData.status==0?'启用':'已禁用'}}</td>
+      </tr>
+      <tr>
+        <td>
+          <span class="key">banner位图片：</span>
+          <img :src="tableData.imgUrl" alt="img">
+          <span class="tips">*建议尺寸：750*320px,jpg格式</span>
+        </td>
+      </tr>
+    </table>
+    <div class="clearfix"></div>
+  </div>
+</template>
+
+<script>
+  export default {
+    data () {
+      return {
+        data: [{
+          label: '现金超市H5页面',
+          children: [{
+            label: '图片运营位_banner01'
+          },
+          {
+            label: '图片运营位_banner02'
+          },
+          {
+            label: '图片运营位_banner03'
+          },
+          {
+            label: '图片运营位_banner04'
+          },
+          {
+            label: '图片运营位_banner05'
+          },
+          {
+            label: '图片运营位_banner06'
+          },
+          {
+            label: '图片运营位_banner07'
+          }]
+        }],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        tableData: {}
+      }
+    },
+    mounted () {
+      this.getDetails()
+    },
+    methods: {
+      handleNodeClick (data) {
+        console.log(data)
+      },
+      getDetails () {
+        let resData = {
+          status: 0,
+          name: '爸爸贷款',
+          imgUrl: 'http://192.168.1.212:8090/ff7ff7b38ce045eba0e44b1255934e70/201711276667d0bb42291c7d.jpg',
+          onlineTime: '2018-08-08 15:11:12',
+          outLineTime: '2018-08-18 05:05:05',
+          remarks: '',
+          url: 'https://www.51job.com'
+        }
+        this.tableData = resData
+      }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-tree {
+    float: left;
+    min-width: 200px;
+    width: 30%;
+    border: 0;
+  }
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+       clear: both;
+    }
+  }
+  .table-details {
+    float: left;
+    min-width: 500px;
+    width: 70%;
+  }
+
+  .table-details tr {
+    display: block;
+    border-bottom: 1px solid #bfcbd9;
+  }
+  .table-details td {
+    display: inline-block;
+    min-width: 49%;
+    padding: 10px 0;
+  }
+
+  .table-details td > .key {
+    display: inline-block;
+    float: left;
+  }
+
+  .table-details td > .tips {
+    color: #8492A6;
+    font-size: 12px;
+  }
+
+</style>

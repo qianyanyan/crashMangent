@@ -1,0 +1,155 @@
+<template>
+  <div>
+    <el-table
+      ref="outlineTable"
+      :data="getOutlineMarketTable"
+      highlight-current-row
+      style="width: 100%">
+      <el-table-column
+        property="adName"
+        label="广告名称"
+        width="120">
+      </el-table-column>
+      <el-table-column
+        label="小图像"
+        width="140">
+        <template scope="scope">
+          <img class="pic-small" :src="scope.row.img2" alt="pic" v-if="scope.row.img2 != '--'">
+          <span v-else v-text="scope.row.img2"></span>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="tags"
+        label="标签">
+      </el-table-column>
+      <el-table-column label="目标路径">
+        <template scope="scope">
+          <a v-if="scope.row.targetUrl != '--'" :href="scope.row.targetUrl" target="_blank"
+             v-text="scope.row.targetUrl"></a>
+          <span v-else v-text="scope.row.targetUrl"></span>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="sysTags"
+        label="系统标签">
+      </el-table-column>
+      <el-table-column
+        property="onlineRealStart"
+        label="实际上线时间">
+      </el-table-column>
+      <el-table-column
+        property="onlineRealEnd"
+        label="实际下线时间">
+      </el-table-column>
+      <el-table-column
+        label="统计">
+        <template scope="scope">
+          <a v-if="scope.row.totalClick == '--'" href="javascript:;"
+             @click="handleTotalClick(scope.$index, scope.row.adId, 2)">点击显示</a>
+          <span v-else v-text="scope.row.totalClick"></span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="操作" width="120">
+        <template scope="scope">
+          <el-button type="primary" size="small" @click="handleToDetails(scope.row)">查看</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-col :span="24" class="toolbar">
+      <el-pagination
+        class="pull-right"
+        layout="total, sizes, prev, pager, next"
+        @current-change="handleCurrentChange"
+        @size-change="handleSizeChange"
+        :page-size="marketOutListData.pageSize"
+        :page-sizes="marketOutListData.pageSizes"
+        :total="marketOutListData.total">
+      </el-pagination>
+    </el-col>
+  </div>
+</template>
+<script>
+  import global from '../../assets/js/global'
+  import { clickLog } from '../../api/api'
+  import bus from '../../assets/js/eventBus'
+
+  export default {
+    data () {
+      return {
+        search: '',
+        marketOutListData: {
+          currentPage: 0,
+          pageSize: 0,
+          pageSizes: [10, 20, 30, 40],
+          total: 0,
+          list: []
+        }
+      }
+    },
+    methods: {
+      handleTotalClick (index, adId, positionType) {
+        let vm = this
+        let params = {
+          adId: adId,
+          positionType: positionType
+        }
+        clickLog(params).then(res => {
+          if (res.data.code == 200) {
+            vm.marketOutListData.list[index].totalClick = res.data.data
+            vm.$store.commit('changeOnLineMarketTableData', {list: vm.marketOutListData.list})
+          } else {
+            vm.$message({
+              message: res.data.message,
+              type: 'error'
+            })
+          }
+        })
+      },
+      handleCurrentChange (page) {
+        let vm = this
+        vm.marketOutListData.currentPage = page
+        bus.$emit('noticeGetOfflineTable', vm.marketOutListData)
+      },
+      handleSizeChange (size) {
+        let vm = this
+        vm.marketOutListData.pageSize = size
+        bus.$emit('noticeGetOfflineTable', vm.marketOutListData)
+      },
+      handleToDetails (row) {
+        this.$router.push('/marketList/details/' + row.id)
+      }
+    },
+    computed: {
+      getOutlineMarketTable () {
+        let data = this.$store.getters.getOutlineMarketData
+        this.marketOutListData.currentPage = data.currentPage
+        this.marketOutListData.pageSize = data.pageSize
+        this.marketOutListData.total = data.total
+        let list = global.replaceCellInfo(data.list, '--')
+        for (let j = 0; j < list.length; j++) {
+          if (list[j].onlineRealStart != '--') {
+            list[j].onlineRealStart = global.formatTime(list[j].onlineRealStart)
+          }
+          if (list[j].onlineRealEnd != '--') {
+            list[j].onlineRealEnd = global.formatTime(list[j].onlineRealEnd)
+          }
+        }
+        this.marketOutListData.list = list
+        return this.marketOutListData.list
+      }
+    }
+  }
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+
+  .pic-small {
+    width: 100px;
+    height: 100px;
+  }
+</style>

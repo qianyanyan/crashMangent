@@ -1,0 +1,94 @@
+<template>
+  <div>
+    <el-breadcrumb separator-class="el-icon-arrow-right">
+        <el-breadcrumb-item :to="{ path: '/advers' }">全部广告</el-breadcrumb-item>
+        <el-breadcrumb-item>广告详情</el-breadcrumb-item>
+    </el-breadcrumb>
+    
+        <!-- <table v-for="item in tableData" class="table-details" width="100%"> -->
+        <table :data="tableData" class="table-details" width="100%">
+          <tr>
+            <td>广告名称</td>
+            <td>{{tableData.status}}</td>
+            <td>广告商外部ID</td>
+            <td>{{tableData.status}}</td>
+          </tr>
+          <tr>
+            <td> 申请条件</td>
+            <td>{{tableData.status}}</td>
+             <td> 目标路径</td>
+            <td>{{tableData.status}}</td>
+          </tr>
+          <tr>
+            <td>标签</td>
+            <td>{{tableData.status}}</td>
+             <td>系统标签</td>
+            <td>{{tableData.status}}</td>
+              <td>创建时间</td>
+            <td>{{tableData.status}}</td>
+             <td>下线时间</td>
+            <td>{{tableData.status}}</td>
+          </tr>
+          <tr>
+             <td>小图像</td>
+             <td><img :src="tableData.picURL" alt="img"></td>
+             <td>banner位图像</td>
+             <td><img :src="tableData.picURL" alt="img"></td>
+          </tr>
+        </table>
+        <div class="clearfix"></div>
+    
+  </div>
+</template>
+
+<script>
+  export default {
+    data () {
+      return {
+        data: [],
+        // tableData: [],
+         tableData: {
+          id: 1,
+          orderNo: 1,
+          bannerPositionName: '1号banner位',
+          status: '启用中',
+          // picURL: 'https://gss0.bdstatic.com/94o3dSag_xI4khGkpoWK1HF6hhy/baike/c0%3Dbaike92%2C5%2C5%2C92%2C30/sign=ca08015fdc3f8794c7f2407cb3726591/3c6d55fbb2fb4316356f989d28a4462308f7d3e1.jpg',
+          comment: 'banner位描述',
+          adName: '广告名称1',
+          targetURL: 'http://www.baidu.com',
+          onlineRealStart: '2017-10-25 05:41:08',
+          onlineTaskEnd: '2017-10-30 05:41:08'
+        }
+      }
+    },
+    mounted () {
+   
+    },
+    methods: {
+      
+     
+      
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-breadcrumb__item__inner{
+    font-size: 20px;
+    color: #20a0ff;
+  }
+ .el-breadcrumb__item .el-breadcrumb__item__inner,.el-breadcrumb__item .el-breadcrumb__item__inner a{
+    color: #20a0ff !important;
+  }
+  .el-breadcrumb {
+    font-size: 24px;
+    line-height: 1;
+}
+.el-breadcrumb__item__inner, .el-breadcrumb__item__inner a{
+   color: #20a0ff !important;
+}
+img{
+  width: 320px;
+}
+</style>

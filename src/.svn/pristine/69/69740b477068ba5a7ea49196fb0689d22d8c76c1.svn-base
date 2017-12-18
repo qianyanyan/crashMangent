@@ -1,0 +1,157 @@
+<template>
+  <div>
+    <el-table
+      ref="onlineTable"
+      :data="getOnlineTable"
+      highlight-current-row
+      style="width: 100%">
+      <el-table-column label="展示排序" width="100">
+        <template scope="scope">
+          <a class="el-sort" :class="{ disabled: scope.row.status != 1 || scope.$index == 0 }" href="javascript:;">
+            <i class="el-icon-caret-left" @click="handleLeft(scope.$index, scope.row)"></i>
+          </a>
+          <a class="el-sort" :class="{ disabled: scope.row.status != 1 || scope.$index == onLineData.total - 1 }" href="javascript:;">
+            <i class="el-icon-caret-right" @click="handleRight(scope.$index, scope.row)"></i>
+          </a>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="bannerPositionName"
+        label="banner位类型">
+      </el-table-column>
+
+      <el-table-column
+        label="banner位状态">
+        <template scope="scope">
+          <span>{{scope.row.status == 1 ? '启用中' : '已禁用'}}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column
+        property="comment"
+        label="banner位描述">
+      </el-table-column>
+      <!--<el-table-column-->
+        <!--:render-header="renderHeader"-->
+        <!--align="left"-->
+        <!--property="content"-->
+        <!--width="150">-->
+      <!--</el-table-column>-->
+      <el-table-column
+        property="adName"
+        label="广告名称">
+      </el-table-column>
+      <el-table-column label="目标路径">
+        <template scope="scope">
+          <span v-if="scope.row.targetURL == '--'" v-text="scope.row.targetURL"></span>
+          <a v-else :href="scope.row.targetURL" target="_blank" v-text="scope.row.targetURL"></a>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="onlineRealStart"
+        label="实际上线时间">
+      </el-table-column>
+      <el-table-column label="操作" width="150">
+        <template scope="scope">
+          <!--v-if="infoShow"-->
+          <el-button type="primary" size="small" @click="handleToDetails(scope.row)">查看</el-button>
+          <!--v-if="modifyShow"-->
+          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-col :span="24" class="toolbar">
+      <el-pagination class="pull-right" layout="total, sizes, prev, pager, next" @current-change="handleCurrentChange" @size-change="handleSizeChange" :page-size="onLineData.pageSize" :page-sizes="onLineData.pageSizes" :total="onLineData.total">
+      </el-pagination>
+    </el-col>
+  </div>
+</template>
+<script>
+  import global from '../../assets/js/global'
+  import bus from '../../assets/js/eventBus'
+  export default {
+    data () {
+      return {
+        search: '',
+        onLineData: {
+          currentPage: 0,
+          pageSize: 0,
+          pageSizes: [10, 20, 30, 40],
+          total: 0,
+          list: []
+        },
+        editFormVisible: false
+      }
+    },
+    mounted () {
+      var vm = this
+      bus.$on('handleOnlineTable', function (search) {
+        vm.search = search
+      })
+    },
+    methods: {
+      // 显示编辑界面
+      handleEdit (row) {
+        this.editFormVisible = true
+        bus.$emit('handleEditBox', this.editFormVisible)
+      },
+      handleCurrentChange (page) {
+        this.$store.commit('changeOnLineTableData', {currentPage: page})
+      },
+      handleSizeChange (size) {
+        this.$store.commit('changeOnLineTableData', {pageSize: size})
+      },
+      handleToDetails (row) {
+        this.$router.push('/bannerManage/details/1/' + row.id)
+      }
+    },
+    computed: {
+      getOnlineTable () {
+        const vm = this
+        let data = vm.$store.getters.getOnlineData
+        vm.onLineData.currentPage = data.currentPage
+        vm.onLineData.pageSize = data.pageSize
+        vm.onLineData.total = data.total
+        let list = []
+        if (vm.search != '' && vm.search != '--') {
+          for (let i = 0; i < data.list.length; i++) {
+            if (vm.search == data.list[i].adName) {
+              list.push(data.list[i])
+            }
+          }
+          vm.onLineData.total = list.length
+        } else {
+          list = data.list
+        }
+        list = global.replaceCellInfo(list, '--')
+        for (let j = 0; j < list.length; j++) {
+          if (list[j].onlineRealStart != '--') {
+            list[j].onlineRealStart = global.formatTime(list[j].onlineRealStart)
+          }
+        }
+        vm.onLineData.list = global.fPage(list, data.currentPage, data.pageSize)
+        return vm.onLineData.list
+      }
+    }
+  }
+</script>
+
+<style  lang="less" rel="stylesheet/less" scoped>
+  .el-sort {
+    color: #324057;
+  }
+
+  .el-sort:hover, .el-sort:active {
+    color: #1F2D3D;
+  }
+
+  .el-sort.disabled {
+    color: #C0CCDA !important;
+    cursor: not-allowed;
+  }
+
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+</style>

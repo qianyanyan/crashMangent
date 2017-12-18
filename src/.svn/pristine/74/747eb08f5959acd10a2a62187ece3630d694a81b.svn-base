@@ -1,0 +1,55 @@
+import Vue from 'vue'
+export default {
+  // 变更用户sessionId
+  changeUserId(state, val) {
+    if (val.data.status == 200) {
+      state.userId = val.data.data.data
+      localStorage.setItem('userId', val.data.data.data)
+    }
+    val.callback(val.data.data)
+  },
+  // 删除用户sessionId
+  deleteUserId(state) {
+    state.userId = ''
+  },
+  // 变更首页信息
+  changeIndexInfo(state, val) {
+    if (val.data.data.code == 200) {
+      state.menuList = val.data.data.data.menuList
+      state.sysUser = val.data.data.data.sysUser
+      state.roleName = val.data.data.data.roleName
+      state.permissionName = val.data.data.data.permissionName
+      localStorage.setItem('permissionName', val.data.data.data.permissionName)
+    }
+    val.callback(val.data.data)
+  },
+  // 变更菜单信息
+  changeMenuInfo(state, val) {
+    let list = state.menuList
+    for (let i in list) {
+      for (let j in list[i].children) {
+        if (val.id == list[i].children[j].id) {
+          list[i].children[j].menuName = val.menuName
+          list[i].children[j].menuUrl = val.menuUrl
+          list[i].children[j].fmenuIcon = val.fmenuIcon
+          list[i].children[j].menuOrder = val.menuOrder
+          list[i].children[j].menuStatus = val.menuStatus
+          break;
+        }
+      }
+    }
+    state.menuList = Object.assign({}, state.menuList);
+  },
+  // 删除菜单
+  deleteMenu (state, id) {
+    for (let i in state.menuList) {
+      for (let j in state.menuList[i].children) {
+        if (id == state.menuList[i].children[j].id){
+          state.menuList[i].children.splice(j ,1)
+          // delete state.menuList[i].children[j]
+        }
+      }
+    }
+    state.menuList = Object.assign({}, state.menuList);
+  }
+}

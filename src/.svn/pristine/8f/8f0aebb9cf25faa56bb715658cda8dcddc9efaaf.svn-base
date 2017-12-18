@@ -1,0 +1,25 @@
+import { requestLogin, toIndex } from '../api/api'
+
+export default {
+  // 登陆后，获取用户信息
+  getUser (context, value) {
+    // ajax请求
+    requestLogin(value.loginParams).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeUserId', val);
+    })
+  },
+  // 获取首页信息
+  getIndexInfo (context, value) {
+    toIndex(value.userId).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeIndexInfo', val);
+    })
+  }
+}

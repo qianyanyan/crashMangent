@@ -1,0 +1,38 @@
+<template>
+  <div style="margin: 15px 0;">
+    <el-tabs v-model="activeName">
+
+      <el-tab-pane label="已上线" name="first">
+        <online-table></online-table>
+      </el-tab-pane>
+      <el-tab-pane label="已下线" name="second">
+        <outline-table></outline-table>
+      </el-tab-pane>
+    </el-tabs>
+    <edit></edit>
+  </div>
+</template>
+
+<script>
+  import onlineTable from '../components/marketList/onlineTable.vue'
+  import outlineTable from '../components/marketList/outlineTable.vue'
+  import futureTable from '../components/marketList/futureTable.vue'
+  export default {
+    data () {
+      return {
+        activeName: 'first'
+      }
+    },
+    components: {onlineTable, outlineTable, futureTable},
+    mounted () {
+//      this.getOnlineTable()
+//      this.getOutlineTable()
+    },
+    methods: {
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+</style>

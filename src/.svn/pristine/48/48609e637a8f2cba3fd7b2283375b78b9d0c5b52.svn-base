@@ -1,0 +1,299 @@
+<template>
+  <div>
+    <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
+      <el-form :model="editForm" label-width="80px" :rules="editFormRules" ref="editForm">
+        <el-form-item label="关联广告" prop="adId">
+          <el-select class="pull-left" :disabled="editForm.adId != ''" v-model="editForm.adId" placeholder="请选择广告" :change="handleSelected(editForm.adId)">
+            <el-option
+              v-for="item in searchOptions"
+              :label="item.adName"
+              :value="item.adId">
+            </el-option>
+          </el-select>
+          <el-input class="search" :disabled="editForm.adId != ''" v-model="editForm.search" type="text" placeholder="请输入关键字（模糊查询）"></el-input>
+        </el-form-item>
+        <div v-if="editForm.adId != ''">
+          <el-form-item class="pic-container" label="banner位图片" prop="picURL">
+            <el-upload :headers="headers" :data="uploadParams" :action="action" :show-file-list="false" :on-success="handleUploadSuccess">
+              <img v-if="previewPic" :src="previewPic" style="width: 120px;">
+              <i v-else class="el-icon-plus uploader-icon"></i>
+            </el-upload>
+            上传图片大小为750*320px
+          </el-form-item>
+          <el-form-item class="comment-container" label="备注">
+            <el-input v-model="editForm.comment" :rows="rows" auto-complete="off" type="textarea" placeholder="请输入该banner位的备注信息"></el-input>
+          </el-form-item>
+          <div class="clearfix"></div>
+          <el-form-item label="上线时间" prop="checked">
+            <el-checkbox v-model="editForm.checked">立即上线（默认）</el-checkbox>
+          </el-form-item>
+          <el-form-item label="下线时间" prop="onlineTaskEnd">
+            <el-date-picker
+              v-model="editForm.onlineTaskEnd"
+              type="datetime"
+              placeholder="选择日期时间">
+            </el-date-picker>
+          </el-form-item>
+        </div>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native="editFormVisible = false">取消</el-button>
+        <el-button type="primary" @click.native="editSubmit" :loading="editLoading">提交</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  import { searchCMarketMerchantAdALL, updateCmarketBannerPosition } from '../../api/api'
+  import bus from '../../assets/js/eventBus'
+  export default {
+    data () {
+      const validateChecked = (rule, value, callback) => {
+        value ? callback() : callback(new Error('请勾选立即上线'))
+      }
+      const validateSelected = (rule, value, callback) => {
+        value != '' ? callback() : callback(new Error('请选择关联广告'))
+      }
+      const validateTimes = (rule, value, callback) => {
+        value ? callback() : callback(new Error('请设定下线时间'))
+      }
+      return {
+        search: '',
+        // 编辑界面是否显示
+        editFormVisible: false,
+        editLoading: false,
+        // 文本框设置5行
+        rows: 5,
+        // 编辑界面数据
+        editForm: {
+          id: '',
+          adId: '',
+          picURL: '',
+          comment: '',
+          checked: true,
+          search: '',
+          onlineTaskEnd: ''
+        },
+        editFormRules: {
+          adId: [
+            {required: true, trigger: 'blur', validator: validateSelected}
+          ],
+          picURL: [
+            {required: true, message: '请上传图片', trigger: 'blur'}
+          ],
+          checked: [
+            {required: true, trigger: 'blur', validator: validateChecked}
+          ],
+          onlineTaskEnd: [
+            {required: true, trigger: 'blur', validator: validateTimes}
+          ]
+        },
+        // 可选框未进过模糊查询的数据，数据库获取初始数据
+        options: [],
+        // 可选框进过模糊查询的数据，也就是用户看到的数据
+        searchData: [],
+        selectedItem: {},
+        headers: { authorization: localStorage.getItem('userId') },
+        uploadParams: { cmarketMerchantId: '' },
+        action: process.env.API_ROOT + '/engine-console/console/uploadFile/uploadPicture.do',
+        previewPic: ''
+      }
+    },
+    methods: {
+      editSubmit () {
+        let vm = this
+        vm.editForm.picURL = vm.editForm.picURL != '' ? vm.editForm.picURL : vm.previewPic.replace(process.env.IMG_SERVER, '')
+        vm.$refs.editForm.validate((valid) => {
+          if (valid) {
+            vm.$confirm('确认提交吗？', '提示', {}).then(() => {
+              vm.editLoading = true
+              let params = {
+                id: vm.editForm.id,
+                adId: vm.editForm.adId,
+                picURL: vm.editForm.picURL,
+                comment: vm.editForm.comment,
+                onlineTaskEnd: typeof vm.editForm.onlineTaskEnd == 'number' ? vm.editForm.onlineTaskEnd : vm.editForm.onlineTaskEnd.getTime()
+              }
+              updateCmarketBannerPosition(params).then(res => {
+                vm.editFormVisible = vm.editLoading = false
+                vm.editForm = Object.assign({}, {
+                  id: '',
+                  adId: '',
+                  picURL: '',
+                  comment: '',
+                  checked: true,
+                  search: '',
+                  onlineTaskEnd: ''
+                })
+                if (res.data.code === 200) {
+                  vm.$message({
+                    message: '编辑成功',
+                    type: 'success'
+                  })
+                  // 通知详情页面，从新获取数据
+                  bus.$emit('noticeRefresh', true)
+                  // 下面用vuex刷新本地数据
+                  let onlineVal = {
+                    tableParams: vm.search,
+                    callback: function (res) {
+                      if (res.data.code != 200) {
+                        vm.$message({
+                          message: res.data.message,
+                          type: 'error'
+                        })
+                      }
+                    }
+                  }
+                  vm.$store.dispatch('getOnlineTable', onlineVal)
+                } else {
+                  vm.$message({
+                    message: res.data.message,
+                    type: 'error'
+                  })
+                }
+              })
+            }, cancel => {
+              console.log(cancel)
+            })
+          } else {
+            console.log('error submit!!')
+            return false
+          }
+        })
+      },
+      searMerchantAd () {
+        let vm = this
+        let params = {
+          adStatusParam: ''
+        }
+        searchCMarketMerchantAdALL(params).then(res => {
+          if (res.data.code === 200) {
+            vm.options = res.data.data
+          } else {
+            vm.$message({
+              message: res.data.message,
+              type: 'error'
+            })
+          }
+        })
+      },
+      handleSelected (id) {
+        if (id != '') {
+          let vm = this
+          for (let i = 0; i < vm.searchData.length; i++) {
+            if (vm.searchData[i].adId == id) {
+              vm.selectedItem = vm.searchData[i]
+              vm.uploadParams.cmarketMerchantId = vm.searchData[i].merchantId
+              if (vm.editForm.picURL == '') {
+                vm.previewPic = process.env.IMG_SERVER + vm.searchData[i].img1
+              }
+              if (vm.editForm.onlineTaskEnd == '') {
+                vm.editForm.onlineTaskEnd = vm.searchData[i].onlineEnd
+              }
+              break
+            }
+          }
+        }
+      },
+      handleUploadSuccess (res, file) {
+        if (res.code == 200) {
+          this.previewPic = URL.createObjectURL(file.raw)
+          this.editForm.picURL = res.data
+        } else {
+          this.$message({
+            message: res.message,
+            type: 'error'
+          })
+        }
+      }
+    },
+    computed: {
+      // 任性的自己写个模糊查询
+      searchOptions () {
+        let vm = this
+        let search = vm.editForm.search
+        if (search != '') {
+          search = search.toLowerCase()
+          vm.searchData = []
+          for (let i = 0; i < vm.options.length; i++) {
+            if (vm.options[i].adName.toLowerCase().indexOf(search) > -1) {
+              vm.searchData.push(vm.options[i])
+            }
+          }
+          return vm.searchData
+        } else {
+          return vm.options
+        }
+      }
+    },
+    mounted () {
+      var vm = this
+      bus.$on('handleEditBox', function (message) {
+        vm.editFormVisible = message.editFormVisible
+        vm.editForm.id = message.id
+      })
+      vm.searMerchantAd()
+      bus.$on('handleOnlineTable', function (search) {
+        vm.search = search
+      })
+    },
+    watch: {
+      editFormVisible (val) {
+        let vm = this
+        if (!val) {
+          vm.editForm = Object.assign({}, {
+            id: '',
+            adId: '',
+            picURL: '',
+            comment: '',
+            checked: true,
+            search: '',
+            onlineTaskEnd: ''
+          })
+        }
+      }
+    }
+  }
+</script>
+
+<style  lang="less" rel="stylesheet/less" scoped>
+  .uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 120px !important;
+    height: 120px !important;
+    line-height: 120px !important;
+    text-align: center;
+    border: 1px dashed #c0ccda;
+    background-color: #fbfdff;
+  }
+  .pic-container {
+    float: left;
+    width: 232px;
+  }
+
+  .comment-container {
+    float: left;
+    width: 50%;
+  }
+
+  .search {
+    float: left;
+    width: 40%;
+    min-width: 160px;
+    margin-left: 15px;
+  }
+
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+       clear: both;
+    }
+  }
+</style>

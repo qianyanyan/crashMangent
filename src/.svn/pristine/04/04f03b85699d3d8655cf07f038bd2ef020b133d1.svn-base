@@ -1,0 +1,338 @@
+<template>
+  <div style="min-width: 950px; margin: 15px 0;">
+    <el-tabs v-model="activeName" type="card">
+      <el-tab-pane label="广告详情" name="first">
+        <table class="table-details" width="100%">
+          <tr>
+            <td>广告名称：</td>
+            <td>{{tableData.adName}}</td>
+            <td>广告商外部ID：</td>
+            <td>{{tableData.externalMerchantId}}</td>
+          </tr>
+           <tr>
+            <td>申请条件：</td>
+            <td>{{tableData.details}}</td>
+          </tr>
+          <tr>
+             <td>标签：</td>
+            <td>{{tableData.tags}}</td>
+            <td>系统标签：</td>
+            <td>{{tableData.sysTags}}</td>
+          </tr>
+          <tr>
+            <td>实际上线时间：</td>
+            <td width="30%">{{tableData.onlineRealStart}}</td>
+            <td>实际下线时间：</td>
+            <td>{{tableData.onlineRealEnd}}</td>
+          </tr>
+           <tr>
+            <td>设定的上线时间：</td>
+            <td width="30%">{{tableData.onlineStart}}</td>
+            <td>设定的下线时间：</td>
+            <td>{{tableData.onlineEnd}}</td>
+          </tr>
+           <tr>
+            <td>小图像：</td>
+            <td>
+              <img :src="tableData.img2">
+            </td>
+          </tr>
+          <tr>
+            <td>目标路径：</td>
+            <td>
+              <a :href="tableData.targetUrl" target="_blank">{{tableData.targetURL}}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="display: inline-block; width: 60%; text-align: center;">
+              <el-button type="danger" @click="handleEdit">编辑</el-button>
+              <el-button type="primary">确定</el-button>
+            </td>
+          </tr>
+        </table>
+        <div class="clearfix"></div>
+      </el-tab-pane>
+      <el-tab-pane label="广告统计" name="second">
+        <el-table
+          :data="detailData"
+          style="width: 100%">
+          <el-table-column
+            prop="adName"
+            label="广告名称">
+          </el-table-column>
+          <el-table-column
+            prop="adName"
+            label="上线状态">
+          </el-table-column>
+          <el-table-column
+            prop="onlineRealStart"
+            label="上线时间">
+          </el-table-column>
+          <el-table-column
+            prop="onlineTaskEnd"
+            label="设定的下线时间">
+          </el-table-column>
+          <el-table-column
+            prop="onlineRealStart"
+            label="下线时间">
+          </el-table-column>
+          <el-table-column
+            prop="listTaotalClick"
+            label="总点击数量">
+           </el-table-column>
+           <el-table-column
+             prop="listThisMothClick"
+             label="当月(自然月)点击数">
+            </el-table-column>
+        </el-table>
+        <div style="margin: 15px 0;">
+          <el-form :inline="true" :model="filters">
+            <el-form-item>
+              按时间段查询：
+              <el-date-picker
+                v-model="filters.startTime"
+                type="date"
+                placeholder="选择开始日期时间"
+                format="yyyy-MM-dd"
+                :picker-options="startPickerOptions">
+              </el-date-picker>
+            </el-form-item>
+            <el-form-item>
+              <el-date-picker
+                v-model="filters.endTime"
+                type="date"
+                placeholder="选择结束日期时间"
+                format="yyyy-MM-dd"
+                :picker-options="endPickerOptions">
+              </el-date-picker>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" v-on:click="getInTimeCount">查询</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div id="countTable">
+          <el-table
+            :data="inTimeData">
+            <el-table-column
+              prop="totalClickNum"
+              align="center"
+              label="该时间段内点击数量">
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+    <detailedit v-on:childMethod="getDetails"></detailedit>
+    <addata v-on:childMethod="getDetails"></addata>
+
+  </div>
+</template>
+
+<script>
+ import {adPlanDetail , clickLog , root } from '../api/api'
+ import detailedit from '../components/marketList/detailEdit.vue'
+  import addata from '../components/marketList/addata.vue'
+  import global from "../assets/js/global";
+  import bus from '../assets/js/eventBus'
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        data: [],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        tableData: [],
+        detailData:[],
+        filters: {
+          startTime: '',
+          endTime: ''
+        },
+        startPickerOptions: this.beginTime(),
+        endPickerOptions: this.processTime(),
+        inTimeData: [{
+          totalClickNum: 2323,
+        }]
+      }
+    },
+    components: {detailedit ,addata},
+    mounted () {
+       bus.$on('noticeView', function (row) {
+        console.log(row.id)
+        this.getDetails(row.id)
+      })
+      // let intellId = this.$route.query.intellId
+      this.getDetails(1)
+      this.getInTimeCount()
+     
+    },
+    methods: {
+      handleNodeClick (data) {
+        console.log(data)
+      },
+      handleEdit() {
+           let editFormVisible = true
+           bus.$emit('handleEditBox', {
+            editFormVisible: editFormVisible,
+            detail: this.detailData[0]
+
+          // })
+
+          //  let addFormVisible = true
+          //  bus.$emit('handleEditBox', {
+          //   addFormVisible: addFormVisible,
+
+          })
+      },
+      beginTime () {
+        let vm = this
+        return {
+          disabledDate (time) {
+            if (vm.filters.endTime) {
+              return new Date(vm.filters.endTime).getTime() < time.getTime()
+            }
+          }
+        }
+      },
+      processTime () {
+        let vm = this
+        return {
+          disabledDate (time) {
+            if (vm.filters.startTime) {
+              return new Date(vm.filters.startTime).getTime() > time.getTime()
+            }
+          }
+        }
+      },
+
+      getDetails (id) {
+         let vm = this
+            let perem ={
+               id:1
+            }
+            adPlanDetail(perem).then(data => {
+                if (data.data.code === 200) {
+                    // vm.tableData = data.data.data.detail
+                    vm.tableData = global.replaceObject(data.data.data.detail, '--')
+                    vm.detailData[0] = data.data.data.detail
+                    vm.detailData[0].listTaotalClick = data.data.data.planListClick.listTaotalClick
+                    vm.detailData[0].listThisMothClick = data.data.data.planListClick.listThisMothClick
+                    vm.tableData.img2 = `${process.env.IMG_SERVER}` + vm.tableData.img2;
+
+                     if ( vm.tableData.onlineRealStart != '--' ) {
+                          vm.tableData.onlineRealStart= global.formatTime(vm.tableData.onlineRealStart )
+                      }
+                      if ( vm.tableData.onlineRealEnd != '--' ) {
+                          vm.tableData.onlineRealEnd= global.formatTime(vm.tableData.onlineRealEnd )
+                      }
+                       if ( vm.tableData.onlineStart != '--' ) {
+                          vm.tableData.onlineStart= global.formatTime(vm.tableData.onlineStart )
+                      }
+                       if ( vm.tableData.onlineEnd != '--' ) {
+                          vm.tableData.onlineEnd= global.formatTime(vm.tableData.onlineEnd )
+                      }
+
+                }
+            })
+      },
+      getInTimeCount(){
+            let parem = {
+               adId:this.$route.query.intellId,
+               clickStartTime:Date.parse(this.filters.startTime),
+               clickEndtTime:Date.parse(this.filters.endTime),
+               positionType:2
+             }
+            clickLog(parem).then((data) => {
+                if (data.data.code == 200) {
+                  console.log(data.data.data)
+                   this.inTimeData[0].totalClickNum = data.data.data
+                } else {
+                    this.$message({
+                        message: data.data.message,
+                        type: 'error'
+                    })
+                }
+            })
+        }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-tree {
+    float: left;
+    min-width: 200px;
+    width: 25%;
+    border: 0;
+  }
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+      clear: both;
+    }
+  }
+  .el-tabs {
+    float: left;
+    min-width: 500px;
+    width: 100%;
+  }
+
+  .table-details tr {
+    display: block;
+    border-bottom: 1px solid #bfcbd9;
+  }
+
+  .table-details tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table-details td {
+    display: inline-block;
+    padding: 10px 0;
+  }
+
+  .table-details td:first-child {
+    width: 130px;
+    vertical-align: top;
+    text-align: right;
+  }
+   .table-details td:nth-of-type(2) {
+    width: 30%;
+    vertical-align: top;
+    text-align:left;
+  }
+  .table-details td:nth-of-type(3) {
+    width: 150px;
+    vertical-align: top;
+    text-align:right;
+  }
+
+  .table-details td > .tips {
+    color: #8492A6;
+    font-size: 12px;
+  }
+
+  .table-details img{
+    width: 120px;
+    height: 120px;
+
+  }
+
+  .table-details td .el-button+.el-button {
+    margin-left: 30px;
+  }
+
+  #countTable > .el-table {
+    width: 180px;
+  }
+
+</style>

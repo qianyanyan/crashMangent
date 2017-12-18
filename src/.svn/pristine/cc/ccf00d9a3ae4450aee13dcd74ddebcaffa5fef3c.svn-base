@@ -1,0 +1,103 @@
+<template>
+  <div style="margin: 15px 0;">
+    <el-tabs v-model="activeName">
+      <el-col :span="24" class="toolbar">
+        <el-form :inline="true" :model="filters">
+          <el-form-item>
+            <el-input v-model="filters.name" placeholder="按关联内容查询"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="search">查询</el-button>
+          </el-form-item>
+          <el-button class="pull-right" type="primary" icon="upload2" id="download" @click="downloadTable">生成列表</el-button>
+        </el-form>
+      </el-col>
+      <el-tab-pane label="已上线" name="first">
+        <!--:child-search="filters.name"-->
+        <online-table></online-table>
+      </el-tab-pane>
+      <el-tab-pane label="已下线" name="second">
+        <outline-table></outline-table>
+      </el-tab-pane>
+    </el-tabs>
+    <edit></edit>
+
+    <form :action="formAction" method="post" id="myForm" target="_blank" style="display: none;">
+      <input type="submit" value="Submit" />
+    </form>
+  </div>
+</template>
+
+<script>
+  import onlineTable from '../components/bannerManage/onlineTable.vue'
+  import outlineTable from '../components/bannerManage/outlineTable.vue'
+  import edit from '../components/bannerManage/edit.vue'
+  import bus from '../assets/js/eventBus'
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        filters: {
+          name: ''
+        },
+        formAction: process.env.API_ROOT + '/engine-console/console/cmarketBannerPosition/exportReport.do'
+      }
+    },
+    components: { onlineTable, outlineTable, edit },
+    mounted () {
+      this.getOnlineTable()
+      this.getOutlineTable()
+    },
+    methods: {
+      getOnlineTable () {
+        let vm = this
+        let onlineVal = {
+          tableParams: vm.filters.name,
+          callback: function (res) {
+            if (res.data.code != 200 && res.data.message.toLowerCase() != 'ok') {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          }
+        }
+        vm.$store.dispatch('getOnlineTable', onlineVal)
+      },
+      getOutlineTable () {
+        let vm = this
+        let outlineVal = {
+          tableParams: vm.filters.name,
+          callback: function (res) {
+            if (res.data.code != 200 && res.data.message.toLowerCase() != 'ok') {
+              vm.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+          }
+        }
+        vm.$store.dispatch('getOutlineTable', outlineVal)
+      },
+      search () {
+        let vm = this
+        const search = vm.filters.name
+        bus.$emit('handleOnlineTable', search)
+        bus.$emit('handleOutlineTable', search)
+      },
+      downloadTable () {
+        document.getElementById('myForm').submit()
+      }
+    },
+    watch: {
+      activeName (val) {
+        this.filters.name = ''
+        this.search()
+      }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+</style>

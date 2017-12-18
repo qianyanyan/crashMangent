@@ -1,0 +1,127 @@
+<template>
+  <div style="margin: 15px 0;">
+    <el-tabs v-model="activeName">
+      <el-col :span="24" class="toolbar">
+        <el-form :inline="true" :model="filters">
+          <el-form-item>
+            <el-button type="primary" @click="handleAdd">新增</el-button>
+          </el-form-item>
+          <el-date-picker
+            v-model="filters.times"
+            type="datetimerange"
+            range-separator=" 至 "
+            placeholder="请选择开始及结束日期">
+          </el-date-picker>
+          <el-form-item>
+            <el-button type="primary" @click="searchMarket">查询</el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="filters.search" placeholder="请输入关键字"></el-input>
+          </el-form-item>
+          <div v-if="activeName == 'first'" style="display: inline-block;">
+            <label>调整顺序</label>
+            <el-form-item>
+              <el-input v-model="order" placeholder="请输入排序位置"></el-input>
+            </el-form-item>
+            <el-button type="primary">保存</el-button>
+          </div>
+          <el-button type="primary" icon="upload2" id="download">导出数据</el-button>
+        </el-form>
+      </el-col>
+
+      <el-tab-pane label="已上线" name="first">
+        <online-table></online-table>
+      </el-tab-pane>
+      <el-tab-pane label="待上线" name="second">
+        <future-table></future-table>
+      </el-tab-pane>
+      <el-tab-pane label="已下线" name="third">
+        <outline-table></outline-table>
+      </el-tab-pane>
+    </el-tabs>
+    <!--<edit></edit>-->
+    <addate ref="editTable"></addate>
+  </div>
+</template>
+
+<script>
+  import onlineTable from '../components/marketList/onlineTable.vue'
+  import outlineTable from '../components/marketList/outlineTable.vue'
+  import futureTable from '../components/marketList/futureTable.vue'
+  import addate from '../components/marketList/addate.vue'
+  import bus from '../assets/js/eventBus'
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        filters: {
+          times: [],
+          search: ''
+        },
+        order: ''
+      }
+    },
+    components: {onlineTable, outlineTable, futureTable,addate},
+    mounted () {
+//      this.getOnlineTable()
+//      this.getOutlineTable()
+      this.getOnlineMarketList()
+      this.getFutureMarketList()
+      this.getOutlineMarketList()
+    },
+    methods: {
+      handleAdd() {
+          // var _this=this;
+          // this.$refs.editTable.addFormTable()
+          let vm = this
+           const addFormVisible =true
+          bus.$emit('handleAdd', addFormVisible)
+      },
+      searchMarket () {
+      },
+      getOnlineMarketList () {
+        let vm = this
+        let onlineVal = {
+          tableParams: {
+            startTime: vm.filters.times[0] || '',
+            endTime: vm.filters.times[1] || ''
+          },
+          callback: function (res) {
+
+          }
+        }
+        vm.$store.dispatch('getOnlineMarketList', onlineVal)
+      },
+      getFutureMarketList () {
+        let vm = this
+        let futureVal = {
+          tableParams: {
+            startTime: vm.filters.times[0] || '',
+            endTime: vm.filters.times[1] || ''
+          },
+          callback: function (res) {
+            console.log(res)
+          }
+        }
+        vm.$store.dispatch('getFutureMarketList', futureVal)
+      },
+      getOutlineMarketList () {
+        let vm = this
+        let outlineVal = {
+          tableParams: {
+            startTime: vm.filters.times[0] || '',
+            endTime: vm.filters.times[1] || ''
+          },
+          callback: function (res) {
+            console.log(res)
+          }
+        }
+        vm.$store.dispatch('getOutlineMarketList', outlineVal)
+      }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+</style>

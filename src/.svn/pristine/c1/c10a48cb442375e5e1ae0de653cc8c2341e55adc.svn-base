@@ -1,0 +1,151 @@
+import axios from 'axios'
+let base = process.env.API_ROOT
+let root = '/engine-console'
+// let root = '/cash-market-console-service'
+
+export {root}
+export const requestLogin = params => {
+  return axios.post(base + root + '/console/sysUser/login.do', params)
+}
+
+export const logout = function () {
+  return axios.post(base + root + '/console/sysUser/logout.do')
+}
+
+export const toIndex = function (userId) {
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  return axios.post(base + root + '/console/sysUser/toIndex.do')
+}
+
+export const selectUser = params => {
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  return axios.post(base + root + '/console/sysUser/selectUser.do', params)
+}
+
+export const modifyUser = params => {
+  return axios.post(base + root + '/console/sysUser/modifyUser.do', params)
+}
+
+export const addSysUser = params => {
+  // axios.defaults.headers.common['authorization'] = sessionStorage.user
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  return axios.post(base + root + '/console/sysUser/addSysUser.do', params)
+}
+
+export const removeUser = params => {
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  return axios.post(base + root + '/console/sysUser/deleteSysUserBatch.do', params)
+}
+
+export const addUser = params => {
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  return axios.post(base + root + '/console/sysUser/addSysUser.do', params)
+}
+
+export const searchRole = params => {
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  // axios.defaults.headers.common['authorization'] = sessionStorage.user
+  return axios.post(base + root + '/console/sysRole/searchRole.do', params)
+}
+export const deleteSysUserRoleBatch = params => {
+  // axios.defaults.headers.common['authorization'] = sessionStorage.user
+  axios.defaults.headers.common['authorization'] = localStorage.getItem('userId')
+  return axios.post(base + root + '/console/sysUserRole/deleteSysUserRoleBatch.do', params)
+}
+
+// 菜单管理开始
+export const searchMenu = params => {
+  return axios.post(base + root + '/console/sysMenu/searchMenu.do', params)
+}
+
+export const searchFMenu = params => {
+  return axios.post(base + root + '/console/sysMenu/searchFMenu.do', params)
+}
+
+export const modifyMenu = params => {
+  return axios.post(base + root + '/console/sysMenu/modifyMenu.do', params)
+}
+
+export const deleteMenu = params => {
+  return axios.post(base + root + '/console/sysMenu/falseDeleteMenuBatch.do', params)
+}
+
+export const addMenu = params => {
+  return axios.post(base + root + '/console/sysMenu/addMenu.do', params)
+}
+// 菜单管理结束
+
+export const modifyRole = params => {
+  return axios.post(base + root + '/console/sysRole/modifyRole.do', params)
+}
+
+export const DeleteRoleBatch = params => {
+  return axios.post(base + root + '/console/sysRole/falseDeleteRoleBatch.do', params)
+}
+
+export const addRole = params => {
+  return axios.post(base + root + '/console/sysRole/addRole.do', params)
+}
+
+export const searchUserForRole = params => {
+  return axios.post(base + root + '/console/sysRole/searchUserForRole.do', params)
+}
+export const addUserRole = params => {
+  return axios.post(base + root + '/console/sysUserRole/addSysUserRoleBatch.do', params)
+}
+
+// 权限管理
+export const searchPermissions = params => {
+  return axios.post(base + root + '/console/sysPermissions/searchPerssmition.do', params)
+}
+export const modifyPermisstion = params => {
+  return axios.post(base + root + '/console/sysPermissions/modifyPermisstion.do', params)
+}
+
+// 资源管理开始
+export const searchResources = params => {
+  return axios.post(base + root + '/console/sysPermissions/searchResources.do', params)
+}
+export const addResources = params => {
+  return axios.post(base + root + '/console/sysPermissions/addResources.do', params)
+}
+export const deleteResources = params => {
+  return axios.post(base + root + '/console/sysPermissions/falseDeleteResourcesBatch.do', params)
+}
+export const modifyResources = params => {
+  return axios.post(base + root + '/console/sysPermissions/modifyResources.do', params)
+}
+// 资源管理结束
+
+export const uploadPicture = params => {
+  return axios.post(base + root + '/console/uploadFile/uploadPicture.do', params)
+}
+
+// 广告商开始
+export const merchantList = params => {
+  return axios.post(base + root + '/console/cmarketMerchant/show.do', params)
+}
+export const addMerchant = params => {
+  return axios.post(base + root + '/console/cmarketMerchant/add.do', params)
+}
+export const modifyMerchant = params => {
+  return axios.post(base + root + '/console/cmarketMerchant/update.do', params)
+}
+
+// 广告商结束
+// 广告管理
+
+export const searMerchantAd = params => {
+  return axios.post(base + root + '/console/cmarketMerchantAd/searchCMarketMerchantAd.do', params)
+}
+
+export const searchCMarket = params => {
+  return axios.post(base + root + '/console/cmarketMerchantAd/selectCMarketMerchant.do', params)
+}
+
+export const addMerchantAd = params => {
+  return axios.post(base + root + '/console/cmarketMerchantAd/addCMarketMerchantAd.do', params)
+}
+export const updatechCMarket = params => {
+  return axios.post(base + root + '/console/cmarketMerchantAd/updatechCMarketMerchantAd.do', params)
+}

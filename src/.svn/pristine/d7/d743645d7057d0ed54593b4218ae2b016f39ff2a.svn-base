@@ -1,0 +1,180 @@
+<template>
+  <div style="min-width: 950px;">
+    <el-tree
+      :data="data"
+      :props="defaultProps"
+      @node-click="handleNodeClick"
+      default-expand-all
+      highlight-current>
+    </el-tree>
+    <el-tabs v-model="activeName" type="card">
+      <el-tab-pane label="banner位详情" name="first">
+        <table class="table-details">
+          <tr>
+            <td>banner位状态：</td>
+            <td>{{tableData.status==0?'启用':'已禁用'}}</td>
+          </tr>
+          <tr>
+            <td>
+              banner位图片：
+            </td>
+            <td>
+              <img :src="tableData.imgUrl" alt="img">
+              <span class="tips">*建议尺寸：750*320px,jpg格式</span>
+            </td>
+          </tr>
+          <tr>
+            <td>广告名称：</td>
+            <td>爸爸贷款</td>
+          </tr>
+          <tr>
+            <td>上线时间：</td>
+            <td width="30%">2017-11-11 15:03:03</td>
+            <td>下线时间：</td>
+            <td>2017-05-05 05:05:05</td>
+          </tr>
+          <tr>
+            <td>banner位备注：</td>
+            <td width="30%">--</td>
+            <td>目标路径：</td>
+            <td>
+              <a href="https://www.baidu.com" target="_blank">https://www.baidu.com</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="display: inline-block; width: 60%; text-align: center;">
+              <el-button type="success">启用</el-button>
+              <el-button type="primary">编辑</el-button>
+            </td>
+          </tr>
+        </table>
+        <div class="clearfix"></div>
+      </el-tab-pane>
+      <el-tab-pane label="banner位统计" name="second">
+        哇哈哈啊哈
+      </el-tab-pane>
+    </el-tabs>
+
+
+  </div>
+</template>
+
+<script>
+  export default {
+    data () {
+      return {
+        activeName: 'first',
+        data: [{
+          label: '现金超市H5页面',
+          children: [{
+            label: '图片运营位_banner01'
+          },
+          {
+            label: '图片运营位_banner02'
+          },
+          {
+            label: '图片运营位_banner03'
+          },
+          {
+            label: '图片运营位_banner04'
+          },
+          {
+            label: '图片运营位_banner05'
+          },
+          {
+            label: '图片运营位_banner06'
+          },
+          {
+            label: '图片运营位_banner07'
+          }]
+        }],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        tableData: {}
+      }
+    },
+    mounted () {
+      this.getDetails()
+    },
+    methods: {
+      handleNodeClick (data) {
+        console.log(data)
+      },
+      getDetails () {
+        let resData = {
+          status: 0,
+          name: '爸爸贷款',
+          imgUrl: 'http://192.168.1.212:8090/ff7ff7b38ce045eba0e44b1255934e70/201711276667d0bb42291c7d.jpg',
+          onlineTime: '2018-08-08 15:11:12',
+          outLineTime: '2018-08-18 05:05:05',
+          remarks: '',
+          url: 'https://www.51job.com'
+        }
+        this.tableData = resData
+      }
+    }
+  }
+
+</script>
+
+<style lang="less" rel="stylesheet/less" scoped>
+  .el-tree {
+    float: left;
+    min-width: 200px;
+    width: 25%;
+    border: 0;
+  }
+  .clearfix {
+    *zoom: 1;
+    &:before,
+    &:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    &:after {
+      clear: both;
+    }
+  }
+  .el-tabs {
+    float: left;
+    min-width: 500px;
+    width: 75%;
+  }
+
+  .table-details tr {
+    display: block;
+    border-bottom: 1px solid #bfcbd9;
+  }
+
+  .table-details tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table-details td {
+    display: inline-block;
+    padding: 10px 0;
+  }
+
+  .table-details td:first-child {
+    width: 130px;
+    vertical-align: top;
+    text-align: right;
+  }
+
+  .table-details td > .tips {
+    color: #8492A6;
+    font-size: 12px;
+  }
+
+  .table-details td .el-button {
+    width: 120px;
+
+  }
+  .table-details td .el-button+.el-button {
+    margin-left: 30px;
+  }
+
+</style>

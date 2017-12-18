@@ -1,0 +1,139 @@
+<template>
+  <div>
+    <el-table
+      ref="onlineTable"
+      :data="getOnlineTable"
+      highlight-current-row
+      style="width: 100%">
+      <el-table-column label="展示排序" width="100">
+        <template scope="scope">
+          <a class="el-sort" :class="{ disabled: scope.row.status != 0 || scope.$index == 0 }" href="javascript:;">
+            <i class="el-icon-caret-left" @click="handleLeft(scope.$index, scope.row)"></i>
+          </a>
+          <a class="el-sort" :class="{ disabled: scope.row.status != 0 || scope.$index == onLineData.total - 1 }" href="javascript:;">
+            <i class="el-icon-caret-right" @click="handleRight(scope.$index, scope.row)"></i>
+          </a>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="type"
+        label="banner位类型">
+      </el-table-column>
+      <el-table-column label="banner位状态">
+        <template scope="scope">
+          <span v-text="scope.row.status==0?'启动':'禁用'"></span>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="describe"
+        label="banner位描述">
+      </el-table-column>
+      <el-table-column
+        :render-header="renderHeader"
+        align="left"
+        property="content"
+        width="150">
+      </el-table-column>
+      <el-table-column
+        property="name"
+        label="广告名称">
+      </el-table-column>
+      <el-table-column label="目标路径">
+        <template scope="scope">
+          <a :href="scope.row.url" target="_blank" v-text="scope.row.url"></a>
+        </template>
+      </el-table-column>
+      <el-table-column
+        property="onlineTime"
+        label="实际上线时间">
+      </el-table-column>
+      <el-table-column label="操作" width="150">
+        <template scope="scope">
+          <!--v-if="infoShow"-->
+          <el-button type="primary" size="small" @click="handleToInfo(scope.$index, scope.row)">查看</el-button>
+          <!--v-if="modifyShow"-->
+          <el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-col :span="24" class="toolbar">
+      <el-pagination class="pull-right" layout="total, sizes, prev, pager, next" @current-change="handleCurrentChange" @size-change="handleSizeChange" :page-size="onLineData.pageSize" :page-sizes="onLineData.pageSizes" :total="onLineData.total">
+      </el-pagination>
+    </el-col>
+  </div>
+</template>
+<script>
+  import global from '../../assets/js/global'
+  export default {
+    data () {
+      return {
+        search: '',
+        onLineData: {
+          currentPage: 0,
+          pageSize: 0,
+          pageSizes: [2, 10, 20, 30, 40],
+          total: 0,
+          list: []
+        }
+      }
+    },
+    methods: {
+      renderHeader (createElement) {
+        return createElement(
+          'div',
+          {
+            'class': 'renderTableHead',
+            'style': 'line-height: 16px; padding-top: 15px;'
+          },
+          [
+            createElement('div', {
+              attrs: { type: 'text' }
+            }, ['文字内容']
+            ),
+            createElement('div', {
+              attrs: { type: 'text', style: 'color: #FF4949; font-size: 12px;' }
+            }, ['*仅针对文字链运营位']
+            )
+          ]
+        )
+      },
+      handleCurrentChange (page) {
+        this.$store.commit('changeOnLineTableData', {currentPage: page})
+      },
+      handleSizeChange (size) {
+        this.$store.commit('changeOnLineTableData', {pageSize: size})
+      }
+    },
+    computed: {
+      getOnlineTable () {
+        let data = this.$store.getters.getOnlineData
+        this.onLineData.currentPage = data.currentPage
+        this.onLineData.pageSize = data.pageSize
+        this.onLineData.total = data.total
+        let list = global.replaceCellInfo(data.list, '--')
+        this.onLineData.list = global.fPage(list, data.currentPage, data.pageSize)
+        return this.onLineData.list
+      }
+    }
+  }
+</script>
+
+<style  lang="less" rel="stylesheet/less" scoped>
+  .el-sort {
+    color: #324057;
+  }
+
+  .el-sort:hover, .el-sort:active {
+    color: #1F2D3D;
+  }
+
+  .el-sort.disabled {
+    color: #C0CCDA !important;
+    cursor: not-allowed;
+  }
+
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+</style>

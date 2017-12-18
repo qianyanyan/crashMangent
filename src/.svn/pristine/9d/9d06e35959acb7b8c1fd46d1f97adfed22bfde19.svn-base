@@ -1,0 +1,133 @@
+import { requestLogin, toIndex, searMerchantAd } from '../api/api'
+
+export default {
+  // 登陆后，获取用户信息
+  getUser (context, value) {
+    // ajax请求
+    requestLogin(value.loginParams).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeUserId', val)
+    })
+  },
+  // 获取首页信息
+  getIndexInfo (context, value) {
+    toIndex(value.userId).then(data => {
+      let val = {
+        data: data,
+        callback: value.callback
+      }
+      context.commit('changeIndexInfo', val)
+    })
+  },
+  // 获取已在线表格
+  getOnlineTable (context, value) {
+    let onLineData = {
+      currentPage: 1,
+      pageSize: 2,
+      total: 4,
+      list: [
+        {
+          type: '图片运营位',
+          status: 1,
+          describe: '微微贷',
+          content: '',
+          name: '微微贷',
+          url: 'https://www.baidu.com',
+          onlineTime: '2020-08-08 10:00:00'
+        },
+        {
+          type: '图片运营位',
+          status: 1,
+          describe: '马上有钱',
+          content: '',
+          name: '马上有钱',
+          url: '/222222',
+          onlineTime: '2020-08-08 10:00:00'
+        },
+        {
+          type: '图片运营位',
+          status: 0,
+          describe: '华贷宣传H5页面',
+          content: '',
+          name: '',
+          url: '/333333',
+          onlineTime: '2020-08-08 10:00:00'
+        },
+        {
+          type: '图片运营位',
+          status: 0,
+          describe: '爸爸贷款',
+          content: '',
+          name: '爸爸贷款',
+          url: '/444444',
+          onlineTime: '2020-08-08 10:00:00'
+        }
+      ]
+    }
+    let val = {
+      data: onLineData,
+      callback: value.callback
+    }
+    context.commit('getOnlineTable', val)
+  },
+  getOutlineTable (context, value) {
+    let outLineData = {
+      currentPage: 1,
+      pageSize: 2,
+      total: 4,
+      list: [
+        {
+          name: '货上贷',
+          position: '现金超市页面',
+          url: 'https://www.baidu.com',
+          onlineTime: '2020-08-08 10:00:00',
+          outlineTime: '2020-08-08 20:00:00'
+        },
+        {
+          name: '小信用',
+          position: '现金超市页面',
+          url: 'https://www.baidu.com',
+          onlineTime: '2020-08-08 10:00:00',
+          outlineTime: '2020-08-08 20:00:00'
+        },
+        {
+          name: '微粒贷',
+          position: '现金超市页面',
+          url: 'https://www.baidu.com',
+          onlineTime: '2020-08-08 10:00:00',
+          outlineTime: '2020-08-08 20:00:00'
+        },
+        {
+          name: '爸爸贷款',
+          position: '现金超市页面',
+          url: 'https://www.baidu.com',
+          onlineTime: '2020-08-08 10:00:00',
+          outlineTime: '2020-08-08 20:00:00'
+        }
+      ]
+    }
+    let val = {
+      data: outLineData,
+      callback: value.callback
+    }
+    context.commit('getOutlineTable', val)
+  },
+  getAdvertisTable(context, value){
+      searMerchantAd(value).then(data => {
+          let advertisData = {
+            currentPage: 1,
+            total:data.data.total,
+            list:data.data.data,
+            pageSize:( data.data.pageSize ? data.data.pageSize:10 ),
+          }
+          let val = {
+            data: advertisData,
+            callback: value.callback
+          }
+        context.commit('getAdvertisTable', val)
+      })
+  }
+}

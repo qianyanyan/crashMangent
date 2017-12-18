@@ -1,0 +1,38 @@
+<template>
+  <div>
+    <el-col :span="24" class="toolbar">
+      <el-form :inline="true" :model="filters">
+        <el-form-item>
+          <el-button type="primary" @click="handleAdd">新增</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-input v-model="filters.name" placeholder="按关联内容查询"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" v-on:click="">查询</el-button>
+        </el-form-item>
+        <el-button class="pull-right" type="primary" icon="upload2" id="download">生成列表</el-button>
+      </el-form>
+    </el-col>
+  </div>
+</template>
+<script>
+  import global from '../../assets/js/global'
+  export default {
+    data () {
+      return {
+      }
+    },
+    methods: {
+    },
+    computed: {
+    }
+  }
+</script>
+
+<style  lang="less" rel="stylesheet/less" scoped>
+  .toolbar {
+    padding: 10px;
+    margin: 10px 0;
+  }
+</style>
